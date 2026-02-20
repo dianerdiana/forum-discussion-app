@@ -26,5 +26,12 @@ module.exports = {
         devDependencies: ['vite.config.*', '**/*.config.*', '**/scripts/**'],
       },
     ],
+    'react/function-component-definition': [
+      2,
+      {
+        namedComponents: 'arrow-function',
+        unnamedComponents: 'arrow-function',
+      },
+    ],
   },
 };

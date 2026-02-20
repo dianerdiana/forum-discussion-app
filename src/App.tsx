@@ -1,5 +1,5 @@
-function App() {
-  return <h1 className='text-primary'>Dian Erdiana</h1>;
-}
+import HomePage from './pages';
+
+const App = () => <HomePage />;
 
 export default App;
