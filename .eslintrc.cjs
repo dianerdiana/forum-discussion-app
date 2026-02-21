@@ -19,6 +19,7 @@ module.exports = {
     'react/react-in-jsx-scope': 'off',
     'import/prefer-default-export': 'off',
     'react/jsx-filename-extension': [1, { extensions: ['.tsx'] }],
+    'react/no-jsx-constructed': 'false',
     'import/extensions': 'off',
     'import/no-extraneous-dependencies': [
       'error',
