@@ -1,3 +1,6 @@
+import { type ClassValue, clsx } from 'clsx';
+import { twMerge } from 'tailwind-merge';
+
 import { appConfig } from '@/configs/app-config';
 import type { UserData } from '@/types/user-data-type';
 
@@ -35,5 +38,9 @@ export const getHomeRouteForLoggedInUser = (role?: string) => {
     return '/dashboard';
   }
 
-  return '/signin';
+  return '/login';
 };
+
+export function cn(...inputs: ClassValue[]) {
+  return twMerge(clsx(inputs));
+}
