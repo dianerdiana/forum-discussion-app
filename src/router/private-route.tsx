@@ -23,7 +23,7 @@ export const PrivateRoute = ({ children, routeMeta }: PrivateRouteProps) => {
   }
 
   if (!isAuthenticated) {
-    return <Navigate to='/signin' />;
+    return <Navigate to='/login' />;
   }
 
   if (isAuthenticated && restricted) {

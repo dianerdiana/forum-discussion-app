@@ -77,7 +77,7 @@ export const router = createBrowserRouter([
   {
     path: '/',
     index: true,
-    loader: () => redirect('/signin'),
+    loader: () => redirect('/login'),
   },
   {
     Component: LazyApp,
