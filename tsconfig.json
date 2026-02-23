@@ -13,7 +13,8 @@
       "@/utils/*": ["./src/utils/*"],
       "@/types/*": ["./src/types/*"],
       "@/services/*": ["./src/services/*"],
-      "@/features/*": ["./src/features/*"]
+      "@/features/*": ["./src/features/*"],
+      "@/redux/*": ["./src/redux/*"]
     }
   }
 }

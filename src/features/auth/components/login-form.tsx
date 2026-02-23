@@ -9,24 +9,41 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group';
+import { api } from '@/configs/api-config';
+import { toApiError } from '@/configs/auth/jwt-service';
+import { useAppDispatch } from '@/redux/hooks';
 
+import { handleLogin } from '../redux/auth-slice';
 import { loginSchema } from '../schema/login-schema';
 import type { LoginDataType } from '../types/login-type';
 
 export const LoginForm = ({ className, ...props }: React.ComponentProps<'div'>) => {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
+  const dispatch = useAppDispatch();
 
   const { control, handleSubmit, setError } = useForm<LoginDataType>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      username: '',
+      email: '',
       password: '',
     },
   });
 
   const onSubmit = async (data: LoginDataType) => {
-    console.log(data);
+    try {
+      const response = await api.login(data);
+
+      if (response.data.status === 'success') {
+        dispatch(handleLogin(response.data.data.token));
+        navigate('/home');
+      }
+    } catch (error) {
+      setError('email', { type: 'validate' });
+      setError('password', { type: 'validate' });
+      const apiError = toApiError(error);
+      console.log(apiError);
+    }
   };
 
   const toggleShowPassword = () => setShowPassword((prevState) => !prevState);
@@ -43,18 +60,18 @@ export const LoginForm = ({ className, ...props }: React.ComponentProps<'div'>) 
             {/* Username */}
             <Controller
               control={control}
-              name='username'
+              name='email'
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
                   <FieldLabel htmlFor={`form-signin-${field.name}`}>
-                    Username / Email <span className='text-destructive'>*</span>
+                    Email <span className='text-destructive'>*</span>
                   </FieldLabel>
                   <InputGroup>
                     <InputGroupInput
                       {...field}
                       id={`form-signin-${field.name}`}
                       aria-invalid={fieldState.invalid}
-                      placeholder='username'
+                      placeholder='example@dicoding.com'
                       autoComplete='off'
                     />
                     <InputGroupAddon>
