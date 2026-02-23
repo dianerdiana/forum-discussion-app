@@ -9,7 +9,7 @@ const RegisterPage = lazy(() => import('../../pages/register.tsx'));
 
 const routes: AppRoute[] = [
   {
-    path: '/home',
+    path: '/threads',
     element: <HomePage />,
     meta: {
       layout: 'blank',

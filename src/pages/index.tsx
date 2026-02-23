@@ -8,19 +8,25 @@ import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ThreadItem } from '@/features/thread/components/thread-item';
 import { getThreads, selectThreadsListStatus, threadSelectors } from '@/features/thread/redux/thread-slice';
+import { getUsers, userSelectors } from '@/features/user/redux/user-slice';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
+import type { User } from '@/types/user-type';
 import { FETCH_STATUS } from '@/utils/constants/fetch-status';
 
 const HomePage = () => {
   const dispatch = useAppDispatch();
   const allThreads = useAppSelector(threadSelectors.selectAll);
-  const listStatus = useAppSelector(selectThreadsListStatus);
+  const allUsers = useAppSelector(userSelectors.selectAll);
+  const threadListStatus = useAppSelector(selectThreadsListStatus);
+
+  const mapAllUser = new Map<string, User>(allUsers.map((user) => [user.id, user]));
 
   useEffect(() => {
     dispatch(getThreads());
+    dispatch(getUsers());
   }, [dispatch]);
 
-  if (listStatus === FETCH_STATUS.idle || listStatus === FETCH_STATUS.loading) {
+  if (threadListStatus === FETCH_STATUS.idle || threadListStatus === FETCH_STATUS.loading) {
     return null;
   }
 
@@ -43,14 +49,16 @@ const HomePage = () => {
 
         <div className='flex flex-wrap gap-1'>
           {allThreads.map((thread) => (
-            <Badge variant='outline'>#{thread.category}</Badge>
+            <Badge variant='outline' key={thread.id}>
+              #{thread.category}
+            </Badge>
           ))}
         </div>
       </div>
 
       <div className='flex flex-col gap-4'>
         {allThreads.map((thread) => (
-          <ThreadItem thread={thread} key={thread.id} />
+          <ThreadItem key={thread.id} thread={thread} user={mapAllUser.get(thread.ownerId)} />
         ))}
       </div>
 

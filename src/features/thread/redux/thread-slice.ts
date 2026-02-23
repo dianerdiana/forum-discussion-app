@@ -27,10 +27,19 @@ const initialState = threadsAdapter.getInitialState<ThreadState>({
   error: null,
 });
 
+type ThunkThreadArgs = {
+  showGlobalLoading?: boolean; // default true
+  force?: boolean; // kalau mau bypass cache/condition
+};
+
 // Thunks
-export const getThreads = createAsyncThunk<Thread[], void, { state: RootState; rejectValue: unknown }>(
+export const getThreads = createAsyncThunk<
+  Thread[],
+  ThunkThreadArgs | void,
+  { state: RootState; rejectValue: unknown }
+>(
   'threads/getThreads',
-  async (_: void, thunkApi) => {
+  async (_arg, thunkApi) => {
     try {
       const response = await api.get('/threads');
       return response.data.data.threads as Thread[];
@@ -39,36 +48,49 @@ export const getThreads = createAsyncThunk<Thread[], void, { state: RootState; r
     }
   },
   {
-    // prevent duplicate fetch kalau sedang loading / sudah pernah sukses
-    condition: (_arg, { getState }) => {
-      const { threads } = getState();
-      if (threads.listStatus === FETCH_STATUS.loading) return false;
-      // kalau sudah succeeded & ada data, skip
-      const hasData = threads.ids.length > 0;
-      if (threads.listStatus === FETCH_STATUS.succeeded && hasData) return false;
+    condition: (arg, { getState }) => {
+      const state = getState();
+      const { listStatus, ids } = state.threads;
+
+      const force = (arg as ThunkThreadArgs | undefined)?.force === true;
+
+      if (force) return true;
+      if (listStatus === FETCH_STATUS.loading) return false;
+
+      const hasData = ids.length > 0;
+      if (listStatus === FETCH_STATUS.succeeded && hasData) return false;
+
       return true;
     },
   },
 );
 
-export const getThread = createAsyncThunk<Thread, string, { state: RootState; rejectValue: unknown }>(
+export const getThread = createAsyncThunk<
+  Thread,
+  ThunkThreadArgs & { threadId: string },
+  { state: RootState; rejectValue: unknown }
+>(
   'threads/getThread',
-  async (id: string, thunkApi) => {
+  async (arg, thunkApi) => {
     try {
-      const response = await api.get(`/threads/${id}`);
+      const response = await api.get(`/threads/${arg.threadId}`);
       return response.data.data.thread as Thread;
     } catch (error) {
       return thunkApi.rejectWithValue(toApiError(error));
     }
   },
   {
-    condition: (id, { getState }) => {
-      const { threads } = getState();
+    condition: (arg, { getState }) => {
+      const state = getState();
+      const { detailStatus } = state.threads;
 
-      if (threads.detailStatus === FETCH_STATUS.loading) return false;
+      const force = (arg as ThunkThreadArgs | undefined)?.force === true;
+
+      if (force) return true;
+      if (detailStatus === FETCH_STATUS.loading) return false;
 
       // kalau thread sudah ada di store, skip fetch detail
-      const exists = threads.entities[id];
+      const exists = state.threads.entities[arg.threadId];
       if (exists) return false;
 
       return true;

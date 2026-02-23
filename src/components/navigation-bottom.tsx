@@ -1,21 +1,21 @@
 import { useLocation } from 'react-router';
 
-import { House, Search, SquareMenu, User } from 'lucide-react';
+import { ChessQueen, MessagesSquare, Search, User } from 'lucide-react';
 
 import { cn } from '@/utils/utils';
 
 const navigation = [
   {
     id: '1',
-    name: 'Home',
-    icon: House,
-    href: '/home',
+    name: 'Threads',
+    icon: MessagesSquare,
+    href: '/threads',
   },
   {
     id: '2',
-    name: 'Menu',
-    icon: SquareMenu,
-    href: '/products',
+    name: 'Leaderboard',
+    icon: ChessQueen,
+    href: '/leaderboard',
   },
   {
     id: '3',

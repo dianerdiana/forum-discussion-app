@@ -36,7 +36,7 @@ export const LoginForm = ({ className, ...props }: React.ComponentProps<'div'>) 
 
       if (response.data.status === 'success') {
         dispatch(handleLogin(response.data.data.token));
-        navigate('/home');
+        navigate('/threads');
       }
     } catch (error) {
       setError('email', { type: 'validate' });
