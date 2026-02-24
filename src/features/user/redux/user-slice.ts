@@ -142,6 +142,7 @@ export default userSlice.reducer;
 export const userSelectors = usersAdapter.getSelectors<RootState>((state) => state.users);
 export const selectUsersListStatus = (state: RootState) => state.users.listStatus;
 export const selectPreloadStatus = (state: RootState) => state.users.preloadStatus;
+export const selectOwnProfile = (state: RootState) => state.users.me;
 
 export const selectSelectedUser = (state: RootState) => {
   const id = state.users.selectedId;

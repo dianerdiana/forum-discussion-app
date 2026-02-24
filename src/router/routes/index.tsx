@@ -10,6 +10,8 @@ const RegisterPage = lazy(() => import('../../pages/register.tsx'));
 const CreateThreadPage = lazy(() => import('../../pages/threads/create.tsx'));
 const DetailThreadPage = lazy(() => import('../../pages/threads/details.tsx'));
 
+const LeaderboardPage = lazy(() => import('../../pages/leaderboards.tsx'));
+
 const routes: AppRoute[] = [
   {
     path: '/',
@@ -22,6 +24,10 @@ const routes: AppRoute[] = [
   {
     path: '/threads/:id/details',
     element: <DetailThreadPage />,
+  },
+  {
+    path: '/leaderboards',
+    element: <LeaderboardPage />,
   },
   {
     path: '/login',

@@ -3,8 +3,11 @@ import { CreateThreadForm } from '@/features/thread/components/create-thread-for
 
 const CreateThreadPage = () => {
   return (
-    <Container className='pb-12'>
-      <div className='flex items-center min-w-lg justify-center min-h-[90vh]'>
+    <Container className='pb-12 space-y-8'>
+      <div className='bg-foreground flex items-center py-4 px-4'>
+        <h1 className='text-2xl font-bold text-white'>Create New Thread</h1>
+      </div>
+      <div className='flex items-center min-w-lg justify-center px-4'>
         <CreateThreadForm />
       </div>
     </Container>

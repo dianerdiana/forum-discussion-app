@@ -4,7 +4,7 @@ import { cn } from '@/utils/utils';
 
 export const Container = ({ className, children, ...props }: React.ComponentProps<'div'>) => {
   return (
-    <div className={cn('flex flex-col w-full max-w-160 mx-auto', className)} {...props}>
+    <div className={cn('flex flex-col w-full max-w-160 mx-auto bg-white', className)} {...props}>
       {children}
     </div>
   );

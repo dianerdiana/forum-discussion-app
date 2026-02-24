@@ -4,6 +4,7 @@ import { loadingListener } from './loading-listener';
 import uiReducer from './ui-slice';
 
 import authReducer from '../features/auth/redux/auth-slice';
+import leaderboardSlice from '../features/leaderboard/redux/leaderboard-slice';
 import threadReducer from '../features/thread/redux/thread-slice';
 import userReducer from '../features/user/redux/user-slice';
 
@@ -13,6 +14,7 @@ export const store = configureStore({
     auth: authReducer,
     threads: threadReducer,
     users: userReducer,
+    leaderboards: leaderboardSlice,
   },
 
   middleware: (getDefaultMiddleware) =>

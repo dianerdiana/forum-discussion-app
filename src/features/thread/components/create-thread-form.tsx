@@ -5,7 +5,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { Baseline, MessageCircleMore, Tag } from 'lucide-react';
 
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardFooter } from '@/components/ui/card';
 import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
 import { InputGroup, InputGroupAddon, InputGroupInput, InputGroupTextarea } from '@/components/ui/input-group';
 import { useAppDispatch } from '@/redux/hooks';
@@ -42,9 +42,6 @@ export const CreateThreadForm = () => {
 
   return (
     <Card className='min-w-lg'>
-      <CardHeader>
-        <CardTitle className='text-center text-2xl'>Create New Thread</CardTitle>
-      </CardHeader>
       <CardContent>
         <form id='create-thread-form' onSubmit={handleSubmit(onSubmit, onInvalid)}>
           <FieldGroup>

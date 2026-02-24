@@ -15,14 +15,16 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import type { Thread } from '@/types/thread-type';
-import { postedAt } from '@/utils/utils';
+import type { User } from '@/types/user-type';
+import { cn, postedAt } from '@/utils/utils';
 
 type ThreadItemProps = {
   thread: Thread;
   isDetail?: boolean;
+  ownProfile?: User | null;
 };
 
-export const ThreadItem = ({ thread, isDetail = false }: ThreadItemProps) => {
+export const ThreadItem = ({ thread, isDetail = false, ownProfile }: ThreadItemProps) => {
   return (
     <Card key={thread.id}>
       <CardHeader>
@@ -46,11 +48,19 @@ export const ThreadItem = ({ thread, isDetail = false }: ThreadItemProps) => {
         <div className='flex justify-between items-center w-full'>
           <div className='flex'>
             <Button size='sm' variant='ghost' className='hover:bg-transparent text-white hover:text-white'>
-              <ThumbsUp className='size-5 stroke-white' />
+              <ThumbsUp
+                className={cn('size-5 stroke-white', {
+                  'fill-primary': thread.upVotesBy.includes(ownProfile?.id || ''),
+                })}
+              />
               {thread.upVotesBy.length}
             </Button>
             <Button size='sm' variant='ghost' className='hover:bg-transparent text-white hover:text-white'>
-              <ThumbsDown className='size-5 stroke-white' />
+              <ThumbsDown
+                className={cn('size-5 stroke-white', {
+                  'fill-primary': thread.downVotesBy.includes(ownProfile?.id || ''),
+                })}
+              />
               {thread.downVotesBy.length}
             </Button>
           </div>
