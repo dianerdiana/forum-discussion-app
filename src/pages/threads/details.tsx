@@ -16,7 +16,7 @@ const DetailThreadPage = () => {
   const selectedThread = useAppSelector(selectSelectedThread);
 
   useEffect(() => {
-    dispatch(getThread({ threadId, force: true }));
+    dispatch(getThread({ threadId }));
   }, [dispatch]);
 
   return (
@@ -25,7 +25,7 @@ const DetailThreadPage = () => {
         <h1 className='text-2xl'>Detail Thread</h1>
         {selectedThread ? (
           <>
-            <ThreadItem thread={selectedThread} owner={selectedThread.owner} isDetail />
+            <ThreadItem thread={selectedThread} isDetail />
             <CreateCommentForm threadId={selectedThread.id} totalComments={selectedThread.comments?.length || 0} />
             {selectedThread.comments &&
               selectedThread.comments.map((comment) => <CommentItem key={comment.id} comment={comment} />)}

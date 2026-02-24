@@ -16,7 +16,7 @@ function App() {
 
   useEffect(() => {
     setIsMounted(true);
-    dispatch(getOwnProfile({}));
+    dispatch(getOwnProfile());
 
     return () => setIsMounted(false);
   }, []);

@@ -19,7 +19,7 @@ const HomePage = () => {
   const allUsers = useAppSelector(userSelectors.selectAll);
   const threadListStatus = useAppSelector(selectThreadsListStatus);
 
-  const mapAllUser = new Map<string, User>(allUsers.map((user) => [user.id, user]));
+  const mapAllUser = new Map<string | undefined, User>(allUsers.map((user) => [user.id, user]));
 
   useEffect(() => {
     dispatch(getThreads());
@@ -60,7 +60,7 @@ const HomePage = () => {
 
       <div className='flex flex-col gap-4'>
         {allThreads.map((thread) => (
-          <ThreadItem key={thread.id} thread={thread} owner={mapAllUser.get(thread.ownerId)} />
+          <ThreadItem key={thread.id} thread={{ ...thread, owner: mapAllUser.get(thread?.ownerId) }} />
         ))}
       </div>
     </Container>

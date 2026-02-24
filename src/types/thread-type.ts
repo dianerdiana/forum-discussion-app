@@ -7,10 +7,10 @@ export type Thread = {
   body: string;
   category: string;
   createdAt: string;
-  ownerId: string;
   upVotesBy: string[];
   downVotesBy: string[];
-  totalComments?: number;
+  ownerId?: string;
   owner?: User;
+  totalComments?: number;
   comments?: Comment[];
 };

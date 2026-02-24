@@ -12,8 +12,6 @@ type UserState = {
 
   preloadStatus: string;
   listStatus: string;
-  detailStatus: string;
-  createStatus: string;
 
   error: unknown | null;
 };
@@ -27,8 +25,6 @@ const initialState = usersAdapter.getInitialState<UserState>({
 
   preloadStatus: FETCH_STATUS.idle,
   listStatus: FETCH_STATUS.idle,
-  detailStatus: FETCH_STATUS.idle,
-  createStatus: FETCH_STATUS.idle,
   error: null,
 });
 
@@ -66,7 +62,7 @@ export const getUsers = createAsyncThunk<User[], ThunkUserArgs | void, { state: 
   },
 );
 
-export const getOwnProfile = createAsyncThunk<User, ThunkUserArgs, { state: RootState; rejectValue: unknown }>(
+export const getOwnProfile = createAsyncThunk<User, ThunkUserArgs | void, { state: RootState; rejectValue: unknown }>(
   'users/getOwnProfile',
   async (_arg, thunkApi) => {
     try {
@@ -79,12 +75,15 @@ export const getOwnProfile = createAsyncThunk<User, ThunkUserArgs, { state: Root
   {
     condition: (arg, { getState }) => {
       const state = getState();
-      const { detailStatus } = state.users;
+      const { preloadStatus } = state.users;
 
-      const force = (arg as ThunkUserArgs | undefined)?.force === true;
-
+      const force = arg?.force === true;
       if (force) return true;
-      if (detailStatus === FETCH_STATUS.loading) return false;
+
+      if (preloadStatus === FETCH_STATUS.loading) return false;
+
+      const existing = state.users.me;
+      if (existing) return false;
 
       return true;
     },
@@ -125,13 +124,12 @@ const userSlice = createSlice({
     });
     builder.addCase(getOwnProfile.fulfilled, (state, action) => {
       state.preloadStatus = FETCH_STATUS.succeeded;
-      usersAdapter.upsertOne(state, action.payload);
-      state.selectedId = action.payload.id;
       state.me = action.payload;
     });
     builder.addCase(getOwnProfile.rejected, (state, action) => {
       state.preloadStatus = FETCH_STATUS.failed;
       state.error = action.payload ?? action.error;
+      api.removeToken();
     });
   },
 });

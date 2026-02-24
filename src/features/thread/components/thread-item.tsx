@@ -15,25 +15,23 @@ import {
   CardTitle,
 } from '@/components/ui/card';
 import type { Thread } from '@/types/thread-type';
-import type { User } from '@/types/user-type';
 import { postedAt } from '@/utils/utils';
 
 type ThreadItemProps = {
   thread: Thread;
-  owner?: User;
   isDetail?: boolean;
 };
 
-export const ThreadItem = ({ thread, owner, isDetail = false }: ThreadItemProps) => {
+export const ThreadItem = ({ thread, isDetail = false }: ThreadItemProps) => {
   return (
     <Card key={thread.id}>
       <CardHeader>
         <div className='flex items-center gap-x-1'>
           <Avatar size='sm'>
-            <AvatarImage src={owner?.avatar} />
-            <AvatarFallback>{owner?.name}</AvatarFallback>
+            <AvatarImage src={thread.owner?.avatar} />
+            <AvatarFallback>{thread.owner?.name}</AvatarFallback>
           </Avatar>
-          <p className='text-sm'>{owner?.name}</p>
+          <p className='text-sm'>{thread.owner?.name}</p>
         </div>
         <CardTitle>
           <Link to={`/threads/${thread.id}/details`}>{thread.title}</Link>

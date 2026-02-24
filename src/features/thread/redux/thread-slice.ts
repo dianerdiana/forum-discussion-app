@@ -60,8 +60,7 @@ export const getThreads = createAsyncThunk<
       const state = getState();
       const { listStatus, ids } = state.threads;
 
-      const force = (arg as ThunkThreadArgs | undefined)?.force === true;
-
+      const force = arg?.force === true;
       if (force) return true;
       if (listStatus === FETCH_STATUS.loading) return false;
 
@@ -79,29 +78,29 @@ export const getThread = createAsyncThunk<
   { state: RootState; rejectValue: unknown }
 >(
   'threads/getThread',
-  async (arg, thunkApi) => {
+  async ({ threadId }, thunkApi) => {
     try {
-      const response = await api.get(`/threads/${arg.threadId}`);
-      return response.data.data.detailThread as Thread;
-    } catch (error) {
-      return thunkApi.rejectWithValue(toApiError(error));
+      const res = await api.get(`/threads/${threadId}`);
+      return res.data.data.detailThread as Thread;
+    } catch (e) {
+      return thunkApi.rejectWithValue(toApiError(e));
     }
   },
   {
     condition: (arg, { getState }) => {
       const state = getState();
-      const { detailStatus } = state.threads;
-
-      const force = (arg as ThunkThreadArgs | undefined)?.force === true;
-
+      const force = arg.force === true;
       if (force) return true;
-      if (detailStatus === FETCH_STATUS.loading) return false;
 
-      // kalau thread sudah ada di store, skip fetch detail
-      const exists = state.threads.entities[arg.threadId];
-      if (exists) return false;
+      if (state.threads.detailStatus === FETCH_STATUS.loading) return false;
 
-      return true;
+      const existing = state.threads.entities[arg.threadId];
+      if (!existing) return true;
+
+      // list ada, tapi detail belum -> fetch
+      if (!Array.isArray(existing.comments)) return true;
+
+      return false;
     },
   },
 );
@@ -152,7 +151,22 @@ const threadSlice = createSlice({
     });
     builder.addCase(getThreads.fulfilled, (state, action) => {
       state.listStatus = FETCH_STATUS.succeeded;
-      threadsAdapter.setAll(state, action.payload);
+
+      const merged = action.payload.map((incoming) => {
+        const existing = state.entities[incoming.id];
+
+        if (!existing) return incoming;
+
+        return {
+          ...existing,
+          ...incoming,
+          // pertahankan field detail yang tidak ada di list
+          owner: existing.owner,
+          comments: existing.comments,
+        };
+      });
+
+      threadsAdapter.setAll(state, merged);
     });
     builder.addCase(getThreads.rejected, (state, action) => {
       state.listStatus = FETCH_STATUS.failed;
@@ -166,8 +180,21 @@ const threadSlice = createSlice({
     });
     builder.addCase(getThread.fulfilled, (state, action) => {
       state.detailStatus = FETCH_STATUS.succeeded;
-      threadsAdapter.upsertOne(state, action.payload);
-      state.selectedId = action.payload.id;
+
+      const incoming = action.payload;
+      const existing = state.entities[incoming.id];
+
+      const merged: Thread = {
+        ...(existing as Thread | undefined),
+        ...incoming,
+        // bridge: bikin totalComments selalu ada
+        totalComments:
+          incoming.totalComments ??
+          (Array.isArray(incoming.comments) ? incoming.comments.length : (existing?.totalComments ?? 0)),
+      };
+
+      threadsAdapter.upsertOne(state, merged);
+      state.selectedId = incoming.id;
     });
     builder.addCase(getThread.rejected, (state, action) => {
       state.detailStatus = FETCH_STATUS.failed;
@@ -201,13 +228,13 @@ const threadSlice = createSlice({
       const thread = state.entities[threadId];
       if (!thread) return;
 
-      if (!thread.comments) thread.comments = [];
-
-      // update comment
-      thread.comments.unshift(action.payload.data.comment);
-
-      // update counter
+      // update count untuk list
       thread.totalComments = (thread.totalComments ?? 0) + 1;
+
+      // update detail list komentar kalau sudah ada
+      if (Array.isArray(thread.comments)) {
+        thread.comments.unshift(action.payload.data.comment);
+      }
     });
     builder.addCase(createComment.rejected, (state, action) => {
       state.createCommentStatus = FETCH_STATUS.failed;
