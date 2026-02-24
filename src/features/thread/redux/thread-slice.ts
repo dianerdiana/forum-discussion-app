@@ -6,6 +6,8 @@ import type { RootState } from '@/redux/store';
 import type { Thread } from '@/types/thread-type';
 import { FETCH_STATUS } from '@/utils/constants/fetch-status';
 
+import type { CreateThreadType } from '../types/create-thread-type';
+
 type ThreadState = {
   selectedId: string | null;
 
@@ -17,7 +19,9 @@ type ThreadState = {
 };
 
 // Entity Adapter
-const threadsAdapter = createEntityAdapter<Thread>();
+const threadsAdapter = createEntityAdapter<Thread>({
+  sortComparer: (a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime(),
+});
 
 const initialState = threadsAdapter.getInitialState<ThreadState>({
   selectedId: null,
@@ -98,17 +102,21 @@ export const getThread = createAsyncThunk<
   },
 );
 
-export const createThread = createAsyncThunk<Thread, Omit<Thread, 'id'>, { rejectValue: unknown }>(
-  'threads/createThread',
-  async (payload, thunkApi) => {
-    try {
-      const response = await api.post('/threads', payload);
-      return response.data.data.thread as Thread;
-    } catch (error) {
-      return thunkApi.rejectWithValue(toApiError(error));
-    }
-  },
-);
+export const createThread = createAsyncThunk<
+  { message: string; status: string; data: { thread: Thread } },
+  CreateThreadType,
+  { rejectValue: unknown }
+>('threads/createThread', async (payload, thunkApi) => {
+  try {
+    const response = await api.post<CreateThreadType, { message: string; status: string; data: { thread: Thread } }>(
+      '/threads',
+      payload,
+    );
+    return response.data;
+  } catch (error) {
+    return thunkApi.rejectWithValue(toApiError(error));
+  }
+});
 
 // Slice
 const threadSlice = createSlice({
@@ -159,8 +167,8 @@ const threadSlice = createSlice({
     });
     builder.addCase(createThread.fulfilled, (state, action) => {
       state.createStatus = FETCH_STATUS.succeeded;
-      threadsAdapter.addOne(state, action.payload);
-      state.selectedId = action.payload.id;
+      threadsAdapter.addOne(state, action.payload.data.thread);
+      state.selectedId = action.payload.data.thread.id;
     });
     builder.addCase(createThread.rejected, (state, action) => {
       state.createStatus = FETCH_STATUS.failed;

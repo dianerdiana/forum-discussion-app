@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Controller, useForm } from 'react-hook-form';
+import { Controller, type SubmitErrorHandler, type SubmitHandler, useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -12,15 +12,18 @@ import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '
 import { api } from '@/configs/api-config';
 import { toApiError } from '@/configs/auth/jwt-service';
 import { useAppDispatch } from '@/redux/hooks';
+import { useAuth } from '@/utils/hooks/use-auth';
 
 import { handleLogin } from '../redux/auth-slice';
 import { loginSchema } from '../schema/login-schema';
 import type { LoginDataType } from '../types/login-type';
 
-export const LoginForm = ({ className, ...props }: React.ComponentProps<'div'>) => {
+export const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
+
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
+  const auth = useAuth();
 
   const { control, handleSubmit, setError } = useForm<LoginDataType>({
     resolver: zodResolver(loginSchema),
@@ -30,13 +33,16 @@ export const LoginForm = ({ className, ...props }: React.ComponentProps<'div'>) 
     },
   });
 
-  const onSubmit = async (data: LoginDataType) => {
+  const toggleShowPassword = () => setShowPassword((prevState) => !prevState);
+
+  const onSubmit: SubmitHandler<LoginDataType> = async (data: LoginDataType) => {
     try {
       const response = await api.login(data);
 
       if (response.data.status === 'success') {
         dispatch(handleLogin(response.data.data.token));
-        navigate('/threads');
+        auth.refreshAuth();
+        navigate('/');
       }
     } catch (error) {
       setError('email', { type: 'validate' });
@@ -46,7 +52,7 @@ export const LoginForm = ({ className, ...props }: React.ComponentProps<'div'>) 
     }
   };
 
-  const toggleShowPassword = () => setShowPassword((prevState) => !prevState);
+  const onInvalid: SubmitErrorHandler<LoginDataType> = (error) => console.log(error);
 
   return (
     <Card>
@@ -55,7 +61,7 @@ export const LoginForm = ({ className, ...props }: React.ComponentProps<'div'>) 
         <CardDescription className='text-center'>Enter your email below to login to your account</CardDescription>
       </CardHeader>
       <CardContent>
-        <form id='form-signin' onSubmit={handleSubmit(onSubmit)}>
+        <form id='form-login' onSubmit={handleSubmit(onSubmit, onInvalid)}>
           <FieldGroup>
             {/* Username */}
             <Controller
@@ -63,13 +69,13 @@ export const LoginForm = ({ className, ...props }: React.ComponentProps<'div'>) 
               name='email'
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor={`form-signin-${field.name}`}>
+                  <FieldLabel htmlFor={`form-login-${field.name}`}>
                     Email <span className='text-destructive'>*</span>
                   </FieldLabel>
                   <InputGroup>
                     <InputGroupInput
                       {...field}
-                      id={`form-signin-${field.name}`}
+                      id={`form-login-${field.name}`}
                       aria-invalid={fieldState.invalid}
                       placeholder='example@dicoding.com'
                       autoComplete='off'
@@ -89,13 +95,13 @@ export const LoginForm = ({ className, ...props }: React.ComponentProps<'div'>) 
               name='password'
               render={({ field, fieldState }) => (
                 <Field data-invalid={fieldState.invalid}>
-                  <FieldLabel htmlFor={`form-signin-${field.name}`}>
+                  <FieldLabel htmlFor={`form-login-${field.name}`}>
                     Password <span className='text-destructive'>*</span>
                   </FieldLabel>
                   <InputGroup>
                     <InputGroupInput
                       {...field}
-                      id={`form-signin-${field.name}`}
+                      id={`form-login-${field.name}`}
                       aria-invalid={fieldState.invalid}
                       placeholder='Password'
                       autoComplete='off'
@@ -119,7 +125,7 @@ export const LoginForm = ({ className, ...props }: React.ComponentProps<'div'>) 
       </CardContent>
       <CardFooter>
         <Field>
-          <Button type='submit' form='form-signin' className='block w-full'>
+          <Button type='submit' form='form-login' className='block w-full'>
             Login
           </Button>
           <p className='text-muted-foreground text-sm text-center'>

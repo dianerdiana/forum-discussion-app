@@ -1,25 +1,24 @@
 import { lazy } from 'react';
 import { type RouteObject, createBrowserRouter, redirect } from 'react-router-dom';
 
-// Layouts
 import BlankLayout from '@/layouts/blank-layout.tsx';
+import NavigationLayout from '@/layouts/navigation-layout.tsx';
 import type { AppRoute, RouteMeta } from '@/types/route-type';
 
 import { PrivateRoute } from './private-route.tsx';
 import { PublicRoute } from './public-route.tsx';
 import routes from './routes';
 
-const VerticalLayout = lazy(() => import('../layouts/blank-layout.tsx'));
 const LazyApp = lazy(() => import('../App.tsx'));
 
 const resolveLayout = (layout?: string) => {
   switch (layout) {
     case 'blank':
       return BlankLayout;
-    case 'vertical':
-      return VerticalLayout;
+    case 'navigation':
+      return NavigationLayout;
     default:
-      return VerticalLayout;
+      return BlankLayout;
   }
 };
 
@@ -57,8 +56,8 @@ const mergeLayoutRoutes = (layout: string, defaultLayout: string): AppRoute[] =>
 };
 
 const getRoutes = () => {
-  const defaultLayout = 'vertical';
-  const layouts = ['vertical', 'blank'];
+  const defaultLayout = 'navigation';
+  const layouts = ['navigation', 'blank'];
 
   const AllRoutes: RouteObject[] = [];
 
@@ -75,9 +74,9 @@ const getRoutes = () => {
 
 export const router = createBrowserRouter([
   {
-    path: '/',
+    path: '/threads',
     index: true,
-    loader: () => redirect('/login'),
+    loader: () => redirect('/'),
   },
   {
     Component: LazyApp,

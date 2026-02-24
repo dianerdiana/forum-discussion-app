@@ -2,7 +2,6 @@ import { type PayloadAction, createAsyncThunk, createSlice } from '@reduxjs/tool
 
 import { api } from '@/configs/api-config';
 import { toApiError } from '@/configs/auth/jwt-service';
-import { getAccessToken, setAccessToken } from '@/utils/utils';
 
 import type { LoginDataType } from '../types/login-type';
 
@@ -12,7 +11,7 @@ type AuthState = {
 };
 
 const initialState: AuthState = {
-  token: getAccessToken(),
+  token: api.getToken(),
   status: 'idle',
 };
 
@@ -32,16 +31,16 @@ const authSlice = createSlice({
   reducers: {
     handleLogin: (state, action) => {
       state.token = action.payload;
-      setAccessToken(action.payload);
+      api.setToken(action.payload);
     },
     setToken(state, action: PayloadAction<string | null>) {
       state.token = action.payload;
-      if (action.payload) setAccessToken(action.payload);
-      else localStorage.removeItem('token');
+      if (action.payload) api.setToken(action.payload);
+      else api.removeToken();
     },
     handleLogout(state) {
       state.token = null;
-      localStorage.removeItem('token');
+      api.removeToken();
     },
   },
   extraReducers: (builder) => {

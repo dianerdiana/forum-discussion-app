@@ -1,9 +1,9 @@
 import { useEffect } from 'react';
+import { Link } from 'react-router';
 
 import { HeartHandshake } from 'lucide-react';
 
 import { Container } from '@/components/container';
-import { NavigationBottom } from '@/components/navigation-bottom';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ThreadItem } from '@/features/thread/components/thread-item';
@@ -40,7 +40,9 @@ const HomePage = () => {
           <h1 className='text-2xl font-bold'>Community</h1>
         </div>
         <div>
-          <Button>Post</Button>
+          <Button asChild>
+            <Link to='/threads/create'>Post</Link>
+          </Button>
         </div>
       </div>
 
@@ -61,10 +63,6 @@ const HomePage = () => {
           <ThreadItem key={thread.id} thread={thread} user={mapAllUser.get(thread.ownerId)} />
         ))}
       </div>
-
-      <footer>
-        <NavigationBottom />
-      </footer>
     </Container>
   );
 };

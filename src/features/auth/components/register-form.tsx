@@ -1,53 +1,158 @@
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Field, FieldDescription, FieldGroup, FieldLabel } from '@/components/ui/field';
-import { Input } from '@/components/ui/input';
+import { useState } from 'react';
+import { Controller, type SubmitErrorHandler, type SubmitHandler, useForm } from 'react-hook-form';
+import { Link, useNavigate } from 'react-router';
 
-export const RegisterForm = ({ ...props }: React.ComponentProps<typeof Card>) => {
+import { zodResolver } from '@hookform/resolvers/zod';
+import { Eye, EyeClosed, KeyRound, Mail, User2 } from 'lucide-react';
+
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Field, FieldError, FieldGroup, FieldLabel } from '@/components/ui/field';
+import { InputGroup, InputGroupAddon, InputGroupButton, InputGroupInput } from '@/components/ui/input-group';
+import { api } from '@/configs/api-config';
+import { toApiError } from '@/configs/auth/jwt-service';
+
+import { registerSchema } from '../schema/register-schema';
+import type { RegisterDataType } from '../types/register-type';
+
+export const RegisterForm = () => {
+  const [showPassword, setShowPassword] = useState(false);
+  const navigate = useNavigate();
+
+  const { control, handleSubmit } = useForm<RegisterDataType>({
+    resolver: zodResolver(registerSchema),
+    defaultValues: {
+      name: '',
+      email: '',
+      password: '',
+    },
+  });
+
+  const toggleShowPassword = () => setShowPassword((prevState) => !prevState);
+
+  const onSubmit: SubmitHandler<RegisterDataType> = async (data: RegisterDataType) => {
+    try {
+      const response = await api.register(data);
+
+      if (response.data.status === 'success') {
+        navigate('/login');
+      }
+    } catch (error) {
+      const apiError = toApiError(error);
+      console.log(apiError);
+    }
+  };
+
+  const onInvalid: SubmitErrorHandler<RegisterDataType> = (error) => console.log(error);
+
   return (
-    <Card {...props}>
+    <Card>
       <CardHeader>
-        <CardTitle>Create an account</CardTitle>
-        <CardDescription>Enter your information below to create your account</CardDescription>
+        <CardTitle className='text-center text-2xl'>Create an Account</CardTitle>
+        <CardDescription className='text-center'>Enter your information below to create your account</CardDescription>
       </CardHeader>
       <CardContent>
-        <form>
+        <form id='form-register' onSubmit={handleSubmit(onSubmit, onInvalid)}>
           <FieldGroup>
-            <Field>
-              <FieldLabel htmlFor='name'>Full Name</FieldLabel>
-              <Input id='name' type='text' placeholder='John Doe' required />
-            </Field>
-            <Field>
-              <FieldLabel htmlFor='email'>Email</FieldLabel>
-              <Input id='email' type='email' placeholder='m@example.com' required />
-              <FieldDescription>
-                We&apos;ll use this to contact you. We will not share your email with anyone else.
-              </FieldDescription>
-            </Field>
-            <Field>
-              <FieldLabel htmlFor='password'>Password</FieldLabel>
-              <Input id='password' type='password' required />
-              <FieldDescription>Must be at least 8 characters long.</FieldDescription>
-            </Field>
-            <Field>
-              <FieldLabel htmlFor='confirm-password'>Confirm Password</FieldLabel>
-              <Input id='confirm-password' type='password' required />
-              <FieldDescription>Please confirm your password.</FieldDescription>
-            </Field>
-            <FieldGroup>
-              <Field>
-                <Button type='submit'>Create Account</Button>
-                <Button variant='outline' type='button'>
-                  Sign up with Google
-                </Button>
-                <FieldDescription className='px-6 text-center'>
-                  Already have an account? <a href='#'>Sign in</a>
-                </FieldDescription>
-              </Field>
-            </FieldGroup>
+            {/* Name */}
+            <Controller
+              control={control}
+              name='name'
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor={`form-register-${field.name}`}>
+                    Name <span className='text-destructive'>*</span>
+                  </FieldLabel>
+                  <InputGroup>
+                    <InputGroupInput
+                      {...field}
+                      id={`form-register-${field.name}`}
+                      aria-invalid={fieldState.invalid}
+                      placeholder='John Doe'
+                      autoComplete='off'
+                    />
+                    <InputGroupAddon>
+                      <User2 />
+                    </InputGroupAddon>
+                  </InputGroup>
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
+              )}
+            />
+
+            {/* Email */}
+            <Controller
+              control={control}
+              name='email'
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor={`form-register-${field.name}`}>
+                    Email <span className='text-destructive'>*</span>
+                  </FieldLabel>
+                  <InputGroup>
+                    <InputGroupInput
+                      {...field}
+                      id={`form-register-${field.name}`}
+                      aria-invalid={fieldState.invalid}
+                      placeholder='example@dicoding.com'
+                      autoComplete='off'
+                    />
+                    <InputGroupAddon>
+                      <Mail />
+                    </InputGroupAddon>
+                  </InputGroup>
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
+              )}
+            />
+
+            {/* Password */}
+            <Controller
+              control={control}
+              name='password'
+              render={({ field, fieldState }) => (
+                <Field data-invalid={fieldState.invalid}>
+                  <FieldLabel htmlFor={`form-register-${field.name}`}>
+                    Password <span className='text-destructive'>*</span>
+                  </FieldLabel>
+                  <InputGroup>
+                    <InputGroupInput
+                      {...field}
+                      id={`form-register-${field.name}`}
+                      aria-invalid={fieldState.invalid}
+                      placeholder='Password'
+                      autoComplete='off'
+                      type={showPassword ? 'text' : 'password'}
+                    />
+                    <InputGroupAddon>
+                      <KeyRound />
+                    </InputGroupAddon>
+                    <InputGroupAddon align='inline-end'>
+                      <InputGroupButton onClick={toggleShowPassword}>
+                        {showPassword ? <Eye /> : <EyeClosed />}
+                      </InputGroupButton>
+                    </InputGroupAddon>
+                  </InputGroup>
+                  {fieldState.invalid && <FieldError errors={[fieldState.error]} />}
+                </Field>
+              )}
+            />
           </FieldGroup>
         </form>
       </CardContent>
+      <CardFooter>
+        <Field>
+          <Button type='submit' form='form-register' className='block w-full'>
+            Register
+          </Button>
+          <p className='text-muted-foreground text-sm text-center'>
+            Already have an account?{' '}
+            <Link to='/login' className='text-primary'>
+              Login
+            </Link>
+          </p>
+        </Field>
+      </CardFooter>
     </Card>
   );
 };

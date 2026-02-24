@@ -129,10 +129,12 @@ export class JwtService {
 
   setToken(token: string) {
     this.accessToken = token;
+    localStorage.setItem(this.jwtConfig.storageTokenKeyName, JSON.stringify(token));
   }
 
   removeToken() {
     this.accessToken = null;
+    localStorage.removeItem(this.jwtConfig.storageTokenKeyName);
   }
 
   refreshToken(): Promise<AxiosResponse> {

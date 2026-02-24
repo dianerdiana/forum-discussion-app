@@ -6,15 +6,16 @@ import HomePage from '../../pages';
 
 const LoginPage = lazy(() => import('../../pages/login.tsx'));
 const RegisterPage = lazy(() => import('../../pages/register.tsx'));
+const CreateThreadPage = lazy(() => import('../../pages/threads/create.tsx'));
 
 const routes: AppRoute[] = [
   {
-    path: '/threads',
+    path: '/',
     element: <HomePage />,
-    meta: {
-      layout: 'blank',
-      publicRoute: true,
-    },
+  },
+  {
+    path: '/threads/create',
+    element: <CreateThreadPage />,
   },
   {
     path: '/login',

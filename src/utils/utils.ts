@@ -5,7 +5,6 @@ import { appConfig } from '@/configs/app-config';
 import type { UserData } from '@/types/user-data-type';
 
 import { STORAGE_KEYS } from './constants/storage-key';
-import { TOKEN_KEYS } from './constants/token-key';
 import { USER_ROLES } from './constants/user-role';
 
 export const formatCurrency = (value: number) => {
@@ -29,15 +28,6 @@ export const capitalize = (text: string): string => {
     .map((word) => word.charAt(0).toUpperCase() + word.slice(1).toLowerCase())
     .join(' ');
 };
-
-export const getAccessToken = (): string | null => {
-  const existingToken = localStorage.getItem(TOKEN_KEYS.accessToken);
-
-  return existingToken ? JSON.parse(existingToken) : null;
-};
-
-export const setAccessToken = (token: string): void =>
-  localStorage.setItem(TOKEN_KEYS.accessToken, JSON.stringify(token));
 
 export const getUserData = (): UserData => JSON.parse(localStorage.getItem(STORAGE_KEYS.userData) || '{}');
 export const setUserData = (userData: UserData) =>

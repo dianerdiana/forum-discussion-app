@@ -15,7 +15,11 @@ export const store = configureStore({
     users: userReducer,
   },
 
-  middleware: (getDefault) => getDefault().prepend(loadingListener.middleware),
+  middleware: (getDefaultMiddleware) =>
+    getDefaultMiddleware({
+      serializableCheck: false,
+      immutableCheck: false,
+    }).prepend(loadingListener.middleware),
 });
 
 export type RootState = ReturnType<typeof store.getState>;

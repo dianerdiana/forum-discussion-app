@@ -1,8 +1,6 @@
 import { createContext, useLayoutEffect, useState } from 'react';
 
-// import { getAccessToken } from '@/views/authentication/services/auth.service';
-
-const getAccessToken = (): string => 'Token';
+import { api } from '@/configs/api-config';
 
 type AuthContextType = {
   isAuthenticated: boolean;
@@ -17,7 +15,7 @@ const AuthContext = createContext<AuthContextType>({
 });
 
 const AuthContextProvider = ({ children }: { children: React.ReactNode }) => {
-  const [accessToken, setAccessToken] = useState(() => getAccessToken() || null);
+  const [accessToken, setAccessToken] = useState(() => api.getToken());
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
@@ -34,7 +32,7 @@ const AuthContextProvider = ({ children }: { children: React.ReactNode }) => {
   }, [accessToken]);
 
   const refreshAuth = () => {
-    const token = getAccessToken();
+    const token = api.getToken();
     setAccessToken(token);
   };
 

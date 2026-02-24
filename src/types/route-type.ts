@@ -2,7 +2,7 @@ export type RouteMeta = {
   title?: string;
   description?: string;
   publicRoute?: boolean;
-  layout?: 'blank' | 'vertical';
+  layout?: 'blank' | 'navigation';
   restricted?: boolean;
   action?: string;
   resource?: string;
