@@ -60,7 +60,7 @@ const HomePage = () => {
 
       <div className='flex flex-col gap-4'>
         {allThreads.map((thread) => (
-          <ThreadItem key={thread.id} thread={thread} user={mapAllUser.get(thread.ownerId)} />
+          <ThreadItem key={thread.id} thread={thread} owner={mapAllUser.get(thread.ownerId)} />
         ))}
       </div>
     </Container>

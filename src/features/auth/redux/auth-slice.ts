@@ -2,6 +2,7 @@ import { type PayloadAction, createAsyncThunk, createSlice } from '@reduxjs/tool
 
 import { api } from '@/configs/api-config';
 import { toApiError } from '@/configs/auth/jwt-service';
+import { FETCH_STATUS } from '@/utils/constants/fetch-status';
 
 import type { LoginDataType } from '../types/login-type';
 
@@ -12,7 +13,7 @@ type AuthState = {
 
 const initialState: AuthState = {
   token: api.getToken(),
-  status: 'idle',
+  status: FETCH_STATUS.idle,
 };
 
 export const login = createAsyncThunk('app/handleLogin', async (data: LoginDataType, thunkApi) => {
@@ -46,14 +47,12 @@ const authSlice = createSlice({
   extraReducers: (builder) => {
     builder
       .addCase(login.pending, (state) => {
-        state.status = 'pending';
+        state.status = FETCH_STATUS.loading;
       })
       .addCase(login.fulfilled, (state, action) => {
         state.token = action.payload;
         api.setToken(action.payload);
-        state.status = 'success';
-
-        console.log(action.payload);
+        state.status = FETCH_STATUS.succeeded;
       });
   },
 });

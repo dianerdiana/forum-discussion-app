@@ -3,9 +3,11 @@ import { type PayloadAction, createAsyncThunk, createEntityAdapter, createSlice 
 import { api } from '@/configs/api-config';
 import { toApiError } from '@/configs/auth/jwt-service';
 import type { RootState } from '@/redux/store';
+import type { Comment } from '@/types/comment-type';
 import type { Thread } from '@/types/thread-type';
 import { FETCH_STATUS } from '@/utils/constants/fetch-status';
 
+import type { CreateCommentType } from '../types/create-comment-type';
 import type { CreateThreadType } from '../types/create-thread-type';
 
 type ThreadState = {
@@ -13,7 +15,8 @@ type ThreadState = {
 
   listStatus: string;
   detailStatus: string;
-  createStatus: string;
+  createThreadStatus: string;
+  createCommentStatus: string;
 
   error: unknown | null;
 };
@@ -27,7 +30,8 @@ const initialState = threadsAdapter.getInitialState<ThreadState>({
   selectedId: null,
   listStatus: FETCH_STATUS.idle,
   detailStatus: FETCH_STATUS.idle,
-  createStatus: FETCH_STATUS.idle,
+  createThreadStatus: FETCH_STATUS.idle,
+  createCommentStatus: FETCH_STATUS.idle,
   error: null,
 });
 
@@ -78,7 +82,7 @@ export const getThread = createAsyncThunk<
   async (arg, thunkApi) => {
     try {
       const response = await api.get(`/threads/${arg.threadId}`);
-      return response.data.data.thread as Thread;
+      return response.data.data.detailThread as Thread;
     } catch (error) {
       return thunkApi.rejectWithValue(toApiError(error));
     }
@@ -108,10 +112,20 @@ export const createThread = createAsyncThunk<
   { rejectValue: unknown }
 >('threads/createThread', async (payload, thunkApi) => {
   try {
-    const response = await api.post<CreateThreadType, { message: string; status: string; data: { thread: Thread } }>(
-      '/threads',
-      payload,
-    );
+    const response = await api.post('/threads', payload);
+    return response.data;
+  } catch (error) {
+    return thunkApi.rejectWithValue(toApiError(error));
+  }
+});
+
+export const createComment = createAsyncThunk<
+  { message: string; status: string; data: { comment: Comment } },
+  CreateCommentType & { threadId: string },
+  { rejectValue: unknown }
+>('threads/createComment', async ({ threadId, content }, thunkApi) => {
+  try {
+    const response = await api.post(`/threads/${threadId}/comments`, { content });
     return response.data;
   } catch (error) {
     return thunkApi.rejectWithValue(toApiError(error));
@@ -162,16 +176,41 @@ const threadSlice = createSlice({
 
     // createThread
     builder.addCase(createThread.pending, (state) => {
-      state.createStatus = FETCH_STATUS.loading;
+      state.createThreadStatus = FETCH_STATUS.loading;
       state.error = null;
     });
     builder.addCase(createThread.fulfilled, (state, action) => {
-      state.createStatus = FETCH_STATUS.succeeded;
+      state.createThreadStatus = FETCH_STATUS.succeeded;
       threadsAdapter.addOne(state, action.payload.data.thread);
       state.selectedId = action.payload.data.thread.id;
     });
     builder.addCase(createThread.rejected, (state, action) => {
-      state.createStatus = FETCH_STATUS.failed;
+      state.createThreadStatus = FETCH_STATUS.failed;
+      state.error = action.payload ?? action.error;
+    });
+
+    // createComment
+    builder.addCase(createComment.pending, (state) => {
+      state.createCommentStatus = FETCH_STATUS.loading;
+      state.error = null;
+    });
+    builder.addCase(createComment.fulfilled, (state, action) => {
+      state.createCommentStatus = FETCH_STATUS.succeeded;
+
+      const { threadId } = action.meta.arg;
+      const thread = state.entities[threadId];
+      if (!thread) return;
+
+      if (!thread.comments) thread.comments = [];
+
+      // update comment
+      thread.comments.unshift(action.payload.data.comment);
+
+      // update counter
+      thread.totalComments = (thread.totalComments ?? 0) + 1;
+    });
+    builder.addCase(createComment.rejected, (state, action) => {
+      state.createCommentStatus = FETCH_STATUS.failed;
       state.error = action.payload ?? action.error;
     });
   },

@@ -1,3 +1,6 @@
+import type { Comment } from './comment-type';
+import type { User } from './user-type';
+
 export type Thread = {
   id: string;
   title: string;
@@ -7,5 +10,7 @@ export type Thread = {
   ownerId: string;
   upVotesBy: string[];
   downVotesBy: string[];
-  totalComments: number;
+  totalComments?: number;
+  owner?: User;
+  comments?: Comment[];
 };
