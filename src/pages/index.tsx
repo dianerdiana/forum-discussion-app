@@ -47,7 +47,7 @@ const HomePage = () => {
       </div>
 
       <div className='space-y-2'>
-        <p>Kategori Popular:</p>
+        <p>Popular Categories:</p>
 
         <div className='flex flex-wrap gap-1'>
           {allThreads.map((thread) => (

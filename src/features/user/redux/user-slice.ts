@@ -8,7 +8,9 @@ import { FETCH_STATUS } from '@/utils/constants/fetch-status';
 
 type UserState = {
   selectedId: string | null;
+  me: User | null;
 
+  preloadStatus: string;
   listStatus: string;
   detailStatus: string;
   createStatus: string;
@@ -21,6 +23,9 @@ const usersAdapter = createEntityAdapter<User>();
 
 const initialState = usersAdapter.getInitialState<UserState>({
   selectedId: null,
+  me: null,
+
+  preloadStatus: FETCH_STATUS.idle,
   listStatus: FETCH_STATUS.idle,
   detailStatus: FETCH_STATUS.idle,
   createStatus: FETCH_STATUS.idle,
@@ -115,16 +120,17 @@ const userSlice = createSlice({
 
     // getOwnProfile
     builder.addCase(getOwnProfile.pending, (state) => {
-      state.detailStatus = FETCH_STATUS.loading;
+      state.preloadStatus = FETCH_STATUS.loading;
       state.error = null;
     });
     builder.addCase(getOwnProfile.fulfilled, (state, action) => {
-      state.detailStatus = FETCH_STATUS.succeeded;
+      state.preloadStatus = FETCH_STATUS.succeeded;
       usersAdapter.upsertOne(state, action.payload);
       state.selectedId = action.payload.id;
+      state.me = action.payload;
     });
     builder.addCase(getOwnProfile.rejected, (state, action) => {
-      state.detailStatus = FETCH_STATUS.failed;
+      state.preloadStatus = FETCH_STATUS.failed;
       state.error = action.payload ?? action.error;
     });
   },
@@ -137,6 +143,7 @@ export default userSlice.reducer;
 // ===== Selectors (entity adapter selectors)
 export const userSelectors = usersAdapter.getSelectors<RootState>((state) => state.users);
 export const selectUsersListStatus = (state: RootState) => state.users.listStatus;
+export const selectPreloadStatus = (state: RootState) => state.users.preloadStatus;
 
 export const selectSelectedUser = (state: RootState) => {
   const id = state.users.selectedId;
