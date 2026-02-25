@@ -41,7 +41,7 @@ export const CreateThreadForm = () => {
   };
 
   return (
-    <Card className='min-w-lg'>
+    <Card className='min-w-sm'>
       <CardContent>
         <form id='create-thread-form' onSubmit={handleSubmit(onSubmit)}>
           <FieldGroup>

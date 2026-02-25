@@ -38,7 +38,7 @@ export const CreateCommentForm = ({ threadId, totalComments }: CreateCommentForm
   };
 
   return (
-    <Card className='min-w-lg'>
+    <Card className='min-w-sm'>
       <CardHeader>
         <CardTitle className='text-xl'>Comments ({totalComments})</CardTitle>
       </CardHeader>

@@ -133,7 +133,7 @@ export const LoginForm = () => {
       <CardFooter>
         <Field>
           <Button type='submit' form='form-login' className='block w-full' disabled={isLoading}>
-            Submit
+            Login
           </Button>
           <p className='text-muted-foreground text-sm text-center'>
             Don&apis;t have an account?
