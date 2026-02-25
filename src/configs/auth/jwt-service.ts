@@ -17,9 +17,13 @@ export type ApiError = {
 
 export class JwtService {
   axin: AxiosInstance;
+
   jwtConfig = { ...jwtDefaultConfig };
+
   accessToken: string | null = this.getToken();
+
   isAlreadyFetchingAccessToken = false;
+
   subscribers: Function[] = [];
 
   constructor({ baseURL, ...overrideServiceConfig }: JwtServiceConfig) {
@@ -52,7 +56,7 @@ export class JwtService {
         }
 
         // Cek jika error 401 dan bukan request refresh itu sendiri yang error
-        if (response.status === 401 && !originalRequest._retry) {
+        if (response.status === 401 && !originalRequest.retry) {
           if (!this.isAlreadyFetchingAccessToken) {
             this.isAlreadyFetchingAccessToken = true;
 
@@ -73,7 +77,7 @@ export class JwtService {
           }
 
           // Flag agar request ini tidak mengulang refresh jika nanti gagal lagi
-          originalRequest._retry = true;
+          originalRequest.retry = true;
 
           return new Promise((resolve) => {
             this.addSubscriber((token: string) => {
@@ -156,9 +160,7 @@ export class JwtService {
   }
 }
 
-export const createJwt = (jwtConfig: JwtServiceConfig) => {
-  return new JwtService(jwtConfig);
-};
+export const createJwt = (jwtConfig: JwtServiceConfig) => new JwtService(jwtConfig);
 
 export const toApiError = (e: unknown): ApiError => {
   if (axios.isAxiosError(e)) {

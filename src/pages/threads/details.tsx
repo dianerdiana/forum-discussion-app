@@ -19,7 +19,7 @@ const DetailThreadPage = () => {
 
   useEffect(() => {
     dispatch(getThread({ threadId }));
-  }, [dispatch]);
+  }, [dispatch, threadId]);
 
   return (
     <Container className='pb-24 space-y-8'>

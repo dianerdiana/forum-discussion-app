@@ -5,8 +5,7 @@ import { Slot } from "radix-ui"
 import { cn } from "@/utils/utils"
 import { Separator } from "@/components/ui/separator"
 
-function ItemGroup({ className, ...props }: React.ComponentProps<"div">) {
-  return (
+const ItemGroup = ({ className, ...props }: React.ComponentProps<"div">) => (
     <div
       role="list"
       data-slot="item-group"
@@ -17,13 +16,11 @@ function ItemGroup({ className, ...props }: React.ComponentProps<"div">) {
       {...props}
     />
   )
-}
 
-function ItemSeparator({
+const ItemSeparator = ({
   className,
   ...props
-}: React.ComponentProps<typeof Separator>) {
-  return (
+}: React.ComponentProps<typeof Separator>) => (
     <Separator
       data-slot="item-separator"
       orientation="horizontal"
@@ -31,7 +28,6 @@ function ItemSeparator({
       {...props}
     />
   )
-}
 
 const itemVariants = cva(
   "[a]:hover:bg-muted rounded-lg border text-sm w-full group/item focus-visible:border-ring focus-visible:ring-ring/50 flex items-center flex-wrap outline-none transition-colors duration-100 focus-visible:ring-[3px] [a]:transition-colors",
@@ -55,14 +51,14 @@ const itemVariants = cva(
   }
 )
 
-function Item({
+const Item = ({
   className,
   variant = "default",
   size = "default",
   asChild = false,
   ...props
 }: React.ComponentProps<"div"> &
-  VariantProps<typeof itemVariants> & { asChild?: boolean }) {
+  VariantProps<typeof itemVariants> & { asChild?: boolean }) => {
   const Comp = asChild ? Slot.Root : "div"
   return (
     <Comp
@@ -91,12 +87,11 @@ const itemMediaVariants = cva(
   }
 )
 
-function ItemMedia({
+const ItemMedia = ({
   className,
   variant = "default",
   ...props
-}: React.ComponentProps<"div"> & VariantProps<typeof itemMediaVariants>) {
-  return (
+}: React.ComponentProps<"div"> & VariantProps<typeof itemMediaVariants>) => (
     <div
       data-slot="item-media"
       data-variant={variant}
@@ -104,10 +99,8 @@ function ItemMedia({
       {...props}
     />
   )
-}
 
-function ItemContent({ className, ...props }: React.ComponentProps<"div">) {
-  return (
+const ItemContent = ({ className, ...props }: React.ComponentProps<"div">) => (
     <div
       data-slot="item-content"
       className={cn(
@@ -117,10 +110,8 @@ function ItemContent({ className, ...props }: React.ComponentProps<"div">) {
       {...props}
     />
   )
-}
 
-function ItemTitle({ className, ...props }: React.ComponentProps<"div">) {
-  return (
+const ItemTitle = ({ className, ...props }: React.ComponentProps<"div">) => (
     <div
       data-slot="item-title"
       className={cn(
@@ -130,10 +121,8 @@ function ItemTitle({ className, ...props }: React.ComponentProps<"div">) {
       {...props}
     />
   )
-}
 
-function ItemDescription({ className, ...props }: React.ComponentProps<"p">) {
-  return (
+const ItemDescription = ({ className, ...props }: React.ComponentProps<"p">) => (
     <p
       data-slot="item-description"
       className={cn(
@@ -143,20 +132,16 @@ function ItemDescription({ className, ...props }: React.ComponentProps<"p">) {
       {...props}
     />
   )
-}
 
-function ItemActions({ className, ...props }: React.ComponentProps<"div">) {
-  return (
+const ItemActions = ({ className, ...props }: React.ComponentProps<"div">) => (
     <div
       data-slot="item-actions"
       className={cn("gap-2 flex items-center", className)}
       {...props}
     />
   )
-}
 
-function ItemHeader({ className, ...props }: React.ComponentProps<"div">) {
-  return (
+const ItemHeader = ({ className, ...props }: React.ComponentProps<"div">) => (
     <div
       data-slot="item-header"
       className={cn(
@@ -166,10 +151,8 @@ function ItemHeader({ className, ...props }: React.ComponentProps<"div">) {
       {...props}
     />
   )
-}
 
-function ItemFooter({ className, ...props }: React.ComponentProps<"div">) {
-  return (
+const ItemFooter = ({ className, ...props }: React.ComponentProps<"div">) => (
     <div
       data-slot="item-footer"
       className={cn(
@@ -179,7 +162,6 @@ function ItemFooter({ className, ...props }: React.ComponentProps<"div">) {
       {...props}
     />
   )
-}
 
 export {
   Item,

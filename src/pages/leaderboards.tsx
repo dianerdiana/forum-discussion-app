@@ -19,8 +19,8 @@ const LeaderboardPage = () => {
         <h1 className='text-2xl font-bold text-white'>Leaderboard</h1>
       </div>
       <div className='px-4 flex flex-col gap-2'>
-        {leaderboardItems.map((leaderboard, idx) => (
-          <LeaderboardItem key={leaderboard.user.id} leaderboard={leaderboard} order={idx + 1} />
+        {leaderboardItems.map((leaderboard) => (
+          <LeaderboardItem key={leaderboard.user.id} leaderboard={leaderboard} />
         ))}
       </div>
     </Container>

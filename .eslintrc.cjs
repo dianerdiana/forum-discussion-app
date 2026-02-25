@@ -19,7 +19,10 @@ module.exports = {
     'react/react-in-jsx-scope': 'off',
     'import/prefer-default-export': 'off',
     'react/jsx-filename-extension': [1, { extensions: ['.tsx'] }],
-    'react/no-jsx-constructed': 'false',
+    'react/no-jsx-constructed': 'off',
+    'react/jsx-no-constructed-context-values': 'off',
+    'react/require-default-props': 'off',
+    'react/jsx-props-no-spreading': 'off',
     'import/extensions': 'off',
     'import/no-extraneous-dependencies': [
       'error',
@@ -32,6 +35,12 @@ module.exports = {
       {
         namedComponents: 'arrow-function',
         unnamedComponents: 'arrow-function',
+      },
+    ],
+    'no-param-reassign': [
+      'error',
+      {
+        props: false,
       },
     ],
   },

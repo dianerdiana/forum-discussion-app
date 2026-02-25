@@ -136,7 +136,7 @@ export const LoginForm = () => {
             Submit
           </Button>
           <p className='text-muted-foreground text-sm text-center'>
-            Don't have an account?{' '}
+            Don&apis;t have an account?
             <Link to='/register' className='text-primary'>
               Register
             </Link>

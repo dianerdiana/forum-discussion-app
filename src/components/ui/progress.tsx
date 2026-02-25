@@ -4,8 +4,7 @@ import { Progress as ProgressPrimitive } from 'radix-ui';
 
 import { cn } from '@/utils/utils';
 
-function Progress({ className, value, ...props }: React.ComponentProps<typeof ProgressPrimitive.Root>) {
-  return (
+const Progress = ({ className, value, ...props }: React.ComponentProps<typeof ProgressPrimitive.Root>) => (
     <ProgressPrimitive.Root
       data-slot='progress'
       className={cn('bg-muted h-1 rounded-full relative flex w-full items-center overflow-x-hidden', className)}
@@ -17,7 +16,6 @@ function Progress({ className, value, ...props }: React.ComponentProps<typeof Pr
         style={{ transform: `translateX(-${100 - (value || 0)}%)` }}
       />
     </ProgressPrimitive.Root>
-  );
-}
+  )
 
 export { Progress };

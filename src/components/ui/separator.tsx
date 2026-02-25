@@ -4,13 +4,12 @@ import { Separator as SeparatorPrimitive } from 'radix-ui';
 
 import { cn } from '@/utils/utils';
 
-function Separator({
+const Separator = ({
   className,
   orientation = 'horizontal',
   decorative = true,
   ...props
-}: React.ComponentProps<typeof SeparatorPrimitive.Root>) {
-  return (
+}: React.ComponentProps<typeof SeparatorPrimitive.Root>) => (
     <SeparatorPrimitive.Root
       data-slot='separator'
       decorative={decorative}
@@ -21,7 +20,6 @@ function Separator({
       )}
       {...props}
     />
-  );
-}
+  )
 
 export { Separator };

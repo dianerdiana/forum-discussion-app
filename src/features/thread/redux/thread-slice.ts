@@ -446,7 +446,7 @@ const threadSlice = createSlice({
       const thread = state.entities[threadId];
       if (!thread) return;
 
-      const userId = action.payload.data.vote.userId;
+      const { userId } = action.payload.data.vote;
       thread.downVotesBy = removeUserFromVote(thread.downVotesBy, userId);
       addUniqueVote(thread.upVotesBy, userId);
     });
@@ -508,7 +508,7 @@ const threadSlice = createSlice({
       const thread = state.entities[threadId];
       if (!thread) return;
 
-      const userId = action.payload.data.vote.userId;
+      const { userId } = action.payload.data.vote;
       thread.upVotesBy = removeUserFromVote(thread.upVotesBy, userId);
       addUniqueVote(thread.downVotesBy, userId);
     });
@@ -572,7 +572,7 @@ const threadSlice = createSlice({
       const thread = state.entities[threadId];
       if (!thread) return;
 
-      const userId = action.payload.data.vote.userId;
+      const { userId } = action.payload.data.vote;
       thread.upVotesBy = removeUserFromVote(thread.upVotesBy, userId);
       thread.downVotesBy = removeUserFromVote(thread.downVotesBy, userId);
     });
@@ -611,7 +611,7 @@ const threadSlice = createSlice({
       if (!thread) return;
 
       if (Array.isArray(thread.comments)) {
-        const comment = thread.comments.find((comment) => comment.id === commentId);
+        const comment = thread.comments.find((c) => c.id === commentId);
         if (!comment) return;
 
         state.voteOptimisticComment[action.meta.requestId] = {
@@ -641,10 +641,10 @@ const threadSlice = createSlice({
       if (!thread) return;
 
       if (Array.isArray(thread.comments)) {
-        const comment = thread.comments.find((comment) => comment.id === commentId);
+        const comment = thread.comments.find((c) => c.id === commentId);
         if (!comment) return;
 
-        const userId = action.payload.data.vote.userId;
+        const { userId } = action.payload.data.vote;
         comment.downVotesBy = removeUserFromVote(comment.downVotesBy, userId);
         addUniqueVote(comment.upVotesBy, userId);
       }
@@ -665,7 +665,7 @@ const threadSlice = createSlice({
       if (!thread) return;
 
       if (Array.isArray(thread.comments)) {
-        const comment = thread.comments.find((comment) => comment.id === commentId);
+        const comment = thread.comments.find((c) => c.id === commentId);
         if (!comment) return;
 
         // rollback
@@ -689,7 +689,7 @@ const threadSlice = createSlice({
       if (!thread) return;
 
       if (Array.isArray(thread.comments)) {
-        const comment = thread.comments.find((comment) => comment.id === commentId);
+        const comment = thread.comments.find((c) => c.id === commentId);
         if (!comment) return;
 
         state.voteOptimisticComment[action.meta.requestId] = {
@@ -719,10 +719,10 @@ const threadSlice = createSlice({
       if (!thread) return;
 
       if (Array.isArray(thread.comments)) {
-        const comment = thread.comments.find((comment) => comment.id === commentId);
+        const comment = thread.comments.find((c) => c.id === commentId);
         if (!comment) return;
 
-        const userId = action.payload.data.vote.userId;
+        const { userId } = action.payload.data.vote;
         comment.upVotesBy = removeUserFromVote(comment.upVotesBy, userId);
         addUniqueVote(comment.downVotesBy, userId);
       }
@@ -744,7 +744,7 @@ const threadSlice = createSlice({
       if (!thread) return;
 
       if (Array.isArray(thread.comments)) {
-        const comment = thread.comments.find((comment) => comment.id === commentId);
+        const comment = thread.comments.find((c) => c.id === commentId);
         if (!comment) return;
 
         // rollback
@@ -768,7 +768,7 @@ const threadSlice = createSlice({
       if (!thread) return;
 
       if (Array.isArray(thread.comments)) {
-        const comment = thread.comments.find((comment) => comment.id === commentId);
+        const comment = thread.comments.find((c) => c.id === commentId);
         if (!comment) return;
 
         state.voteOptimisticComment[action.meta.requestId] = {
@@ -798,10 +798,10 @@ const threadSlice = createSlice({
       if (!thread) return;
 
       if (Array.isArray(thread.comments)) {
-        const comment = thread.comments.find((comment) => comment.id === commentId);
+        const comment = thread.comments.find((c) => c.id === commentId);
         if (!comment) return;
 
-        const userId = action.payload.data.vote.userId;
+        const { userId } = action.payload.data.vote;
         comment.upVotesBy = removeUserFromVote(comment.upVotesBy, userId);
         comment.downVotesBy = removeUserFromVote(comment.downVotesBy, userId);
       }
@@ -823,7 +823,7 @@ const threadSlice = createSlice({
       if (!thread) return;
 
       if (Array.isArray(thread.comments)) {
-        const comment = thread.comments.find((comment) => comment.id === commentId);
+        const comment = thread.comments.find((c) => c.id === commentId);
         if (!comment) return;
 
         // rollback

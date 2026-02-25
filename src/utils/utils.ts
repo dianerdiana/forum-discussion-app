@@ -7,17 +7,14 @@ import type { UserData } from '@/types/user-data-type';
 import { STORAGE_KEYS } from './constants/storage-key';
 import { USER_ROLES } from './constants/user-role';
 
-export const formatCurrency = (value: number) => {
-  return new Intl.NumberFormat(appConfig.localCurrency, {
+export const formatCurrency = (value: number) =>
+  new Intl.NumberFormat(appConfig.localCurrency, {
     style: 'currency',
     currency: appConfig.currency,
     minimumFractionDigits: 0,
   }).format(value);
-};
 
-export const formatThousandNumber = (value: number) => {
-  return value.toLocaleString(appConfig.localCurrency);
-};
+export const formatThousandNumber = (value: number) => value.toLocaleString(appConfig.localCurrency);
 
 export const isObjEmpty = (obj: any) => Object.keys(obj).length === 0;
 

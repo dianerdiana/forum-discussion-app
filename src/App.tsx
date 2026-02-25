@@ -5,7 +5,7 @@ import { TopLoadingBar } from './components/top-loading-bar';
 import { useAppSelector } from './redux/hooks';
 import { selectIsGlobalLoading } from './redux/ui-slice';
 
-function App() {
+const App = () => {
   const [isMounted, setIsMounted] = useState(false);
 
   const isLoading = useAppSelector(selectIsGlobalLoading);

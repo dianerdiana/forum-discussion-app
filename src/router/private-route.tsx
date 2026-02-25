@@ -14,12 +14,12 @@ type PrivateRouteProps = {
   routeMeta?: RouteMeta;
 };
 
-export const PrivateRoute = ({ children, routeMeta }: PrivateRouteProps) => {
+export const PrivateRoute = ({ children, routeMeta = { restricted: false } }: PrivateRouteProps) => {
   const { isAuthenticated, isLoading } = useAuth();
   const dispatch = useAppDispatch();
   const preloadStatus = useAppSelector(selectPreloadStatus);
 
-  const restricted = routeMeta?.restricted || false;
+  const restricted = routeMeta?.restricted;
 
   const userData = getUserData();
 
@@ -27,7 +27,7 @@ export const PrivateRoute = ({ children, routeMeta }: PrivateRouteProps) => {
     if (isAuthenticated) {
       dispatch(getOwnProfile({ showGlobalLoading: false }));
     }
-  }, []);
+  }, [dispatch, isAuthenticated]);
 
   if (isLoading) {
     return <FallbackSpinner />;

@@ -3,8 +3,7 @@ import { Outlet } from 'react-router-dom';
 
 import { NavigationBottom } from '@/components/navigation-bottom';
 
-const NavigationLayout = () => {
-  return (
+const NavigationLayout = () => (
     <Suspense fallback={null}>
       <Outlet />
 
@@ -13,6 +12,5 @@ const NavigationLayout = () => {
       </footer>
     </Suspense>
   );
-};
 
 export default NavigationLayout;
