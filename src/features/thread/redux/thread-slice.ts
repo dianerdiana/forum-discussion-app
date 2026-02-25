@@ -321,6 +321,7 @@ const threadSlice = createSlice({
     });
     builder.addCase(getThreads.fulfilled, (state, action) => {
       state.listStatus = FETCH_STATUS.succeeded;
+      state.error = null;
 
       const merged = action.payload.map((incoming) => {
         const existing = state.entities[incoming.id];

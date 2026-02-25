@@ -55,7 +55,7 @@ export default defineConfig([
       'import/no-extraneous-dependencies': [
         'error',
         {
-          devDependencies: ['vite.config.*', '**/*.config.*', '**/scripts/**'],
+          devDependencies: ['vite.config.*', '**/*.config.*', '**/scripts/**', '**/*.test.*'],
         },
       ],
 
