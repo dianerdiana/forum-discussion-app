@@ -1,10 +1,9 @@
 import { useEffect } from 'react';
-import { Link } from 'react-router';
+import { Link, useLocation } from 'react-router';
 
 import { HeartHandshake } from 'lucide-react';
 
 import { Container } from '@/components/container';
-import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { ThreadItem } from '@/features/thread/components/thread-item';
 import { getThreads, selectThreadsListStatus, threadSelectors } from '@/features/thread/redux/thread-slice';
@@ -19,6 +18,10 @@ const HomePage = () => {
   const allUsers = useAppSelector(userSelectors.selectAll);
   const threadListStatus = useAppSelector(selectThreadsListStatus);
   const ownProfile = useAppSelector(selectOwnProfile);
+
+  const location = useLocation();
+  const hashValue = location.hash.replace('#', '');
+  const threadItems = hashValue ? allThreads.filter((thread) => thread.category === hashValue) : allThreads;
 
   const mapAllUser = new Map<string | undefined, User>(allUsers.map((user) => [user.id, user]));
 
@@ -52,15 +55,15 @@ const HomePage = () => {
 
         <div className='flex flex-wrap gap-1'>
           {allThreads.map((thread) => (
-            <Badge variant='outline' key={thread.id}>
-              #{thread.category}
-            </Badge>
+            <Button variant={hashValue === thread.category ? 'default' : 'outline'} key={thread.id} asChild>
+              <Link to={`/#${thread.category}`}>#{thread.category}</Link>
+            </Button>
           ))}
         </div>
       </div>
 
       <div className='flex flex-col gap-4 px-4'>
-        {allThreads.map((thread) => (
+        {threadItems.map((thread) => (
           <ThreadItem
             key={thread.id}
             thread={{ ...thread, owner: mapAllUser.get(thread?.ownerId) }}

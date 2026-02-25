@@ -18,11 +18,19 @@ type ThreadState = {
   detailStatus: string;
   createThreadStatus: string;
   createCommentStatus: string;
-  upVoteStatus: string;
-  downVoteStatus: string;
-  neutralVoteStatus: string;
-  voteOptimistic: Record<string, { threadId: string; userId: string; prev: { up: boolean; down: boolean } }>;
+  upVoteThreadStatus: string;
+  downVoteThreadStatus: string;
+  neutralVoteThreadStatus: string;
+  upVoteCommentStatus: string;
+  downVoteCommentStatus: string;
+  neutralVoteCommentStatus: string;
+  voteOptimisticThread: Record<string, { threadId: string; userId: string; prev: { up: boolean; down: boolean } }>;
+  voteOptimisticComment: Record<
+    string,
+    { threadId: string; commentId: string; userId: string; prev: { up: boolean; down: boolean } }
+  >;
   voteInFlightByThreadId: Record<string, string | null>; // threadId -> requestId
+  voteInFlightByCommentId: Record<string, string | null>; // commentId -> requestId
 
   error: unknown | null;
 };
@@ -32,7 +40,8 @@ type ThunkThreadArgs = {
   force?: boolean; // kalau mau bypass cache/condition
 };
 
-type VoteArgs = ThunkThreadArgs & { threadId: string; userId: string };
+type VoteThreadArgs = ThunkThreadArgs & { threadId: string; userId: string };
+type VoteCommentArgs = ThunkThreadArgs & { threadId: string; userId: string; commentId: string };
 
 // Entity Adapter
 const threadsAdapter = createEntityAdapter<Thread>({
@@ -46,23 +55,28 @@ const initialState = threadsAdapter.getInitialState<ThreadState>({
   detailStatus: FETCH_STATUS.idle,
   createThreadStatus: FETCH_STATUS.idle,
   createCommentStatus: FETCH_STATUS.idle,
-  upVoteStatus: FETCH_STATUS.idle,
-  downVoteStatus: FETCH_STATUS.idle,
-  neutralVoteStatus: FETCH_STATUS.idle,
+  upVoteThreadStatus: FETCH_STATUS.idle,
+  downVoteThreadStatus: FETCH_STATUS.idle,
+  neutralVoteThreadStatus: FETCH_STATUS.idle,
+  upVoteCommentStatus: FETCH_STATUS.idle,
+  downVoteCommentStatus: FETCH_STATUS.idle,
+  neutralVoteCommentStatus: FETCH_STATUS.idle,
 
-  voteOptimistic: {},
+  voteOptimisticThread: {},
+  voteOptimisticComment: {},
   voteInFlightByThreadId: {},
+  voteInFlightByCommentId: {},
 
   error: null,
 });
 
-const addUniqueVote = (arr: string[], userId: string) => {
-  if (!arr.includes(userId)) arr.push(userId);
+const addUniqueVote = (arrVotes: string[], userId: string) => {
+  if (!arrVotes.includes(userId)) arrVotes.push(userId);
 };
 
-const removeUserFromVote = (arr: string[], userId: string) => arr.filter((id) => id !== userId);
+const removeUserFromVote = (arrVotes: string[], userId: string) => arrVotes.filter((id) => id !== userId);
 
-const voteThreadCondition = (arg: VoteArgs, { getState }: { getState: () => RootState }) => {
+const voteThreadCondition = (arg: VoteThreadArgs, { getState }: { getState: () => RootState }) => {
   const state = getState();
 
   // bypass kalau memang ingin (mis. untuk recovery)
@@ -70,6 +84,19 @@ const voteThreadCondition = (arg: VoteArgs, { getState }: { getState: () => Root
 
   const inFlight = state.threads.voteInFlightByThreadId[arg.threadId];
   // kalau masih ada requestId tercatat, berarti sedang vote untuk thread itu
+  if (inFlight) return false;
+
+  return true;
+};
+
+const voteCommentCondition = (arg: VoteCommentArgs, { getState }: { getState: () => RootState }) => {
+  const state = getState();
+
+  // bypass kalau memang ingin (mis. untuk recovery)
+  if (arg.force) return true;
+
+  const inFlight = state.threads.voteInFlightByCommentId[arg.commentId];
+  // kalau masih ada requestId tercatat, berarti sedang vote untuk comment itu
   if (inFlight) return false;
 
   return true;
@@ -107,7 +134,11 @@ export const getThreads = createAsyncThunk<
   },
 );
 
-export const getThread = createAsyncThunk<Thread, VoteArgs, { state: RootState; rejectValue: unknown }>(
+export const getThread = createAsyncThunk<
+  Thread,
+  ThunkThreadArgs & { threadId: string },
+  { state: RootState; rejectValue: unknown }
+>(
   'threads/getThread',
   async ({ threadId }, thunkApi) => {
     try {
@@ -162,12 +193,12 @@ export const createComment = createAsyncThunk<
   }
 });
 
-export const handleUpVote = createAsyncThunk<
+export const handleUpVoteThread = createAsyncThunk<
   { message: string; status: string; data: { vote: Vote } },
-  VoteArgs,
+  VoteThreadArgs,
   { state: RootState; rejectValue: unknown }
 >(
-  'threads/handleUpVote',
+  'threads/handleUpVoteThread',
   async (payload, thunkApi) => {
     try {
       const response = await api.post(`/threads/${payload.threadId}/up-vote`);
@@ -179,12 +210,12 @@ export const handleUpVote = createAsyncThunk<
   { condition: voteThreadCondition },
 );
 
-export const handleDownVote = createAsyncThunk<
+export const handleDownVoteThread = createAsyncThunk<
   { message: string; status: string; data: { vote: Vote } },
-  VoteArgs,
+  VoteThreadArgs,
   { state: RootState; rejectValue: unknown }
 >(
-  'threads/handleDownVote',
+  'threads/handleDownVoteThread',
   async (payload, thunkApi) => {
     try {
       const response = await api.post(`/threads/${payload.threadId}/down-vote`);
@@ -196,12 +227,12 @@ export const handleDownVote = createAsyncThunk<
   { condition: voteThreadCondition },
 );
 
-export const handleNeutralVote = createAsyncThunk<
+export const handleNeutralVoteThread = createAsyncThunk<
   { message: string; status: string; data: { vote: Vote } },
-  VoteArgs,
+  VoteThreadArgs,
   { state: RootState; rejectValue: unknown }
 >(
-  'threads/handleNeutralVote',
+  'threads/handleNeutralVoteThread',
   async (payload, thunkApi) => {
     try {
       const response = await api.post(`/threads/${payload.threadId}/neutral-vote`);
@@ -211,6 +242,63 @@ export const handleNeutralVote = createAsyncThunk<
     }
   },
   { condition: voteThreadCondition },
+);
+
+export const handleUpVoteComment = createAsyncThunk<
+  { message: string; status: string; data: { vote: Vote } },
+  VoteCommentArgs,
+  { state: RootState; rejectValue: unknown }
+>(
+  'threads/handleUpVoteComment',
+  async (payload, thunkApi) => {
+    const { threadId, commentId } = payload;
+
+    try {
+      const response = await api.post(`/threads/${threadId}/comments/${commentId}/up-vote`);
+      return response.data;
+    } catch (error) {
+      return thunkApi.rejectWithValue(toApiError(error));
+    }
+  },
+  { condition: voteCommentCondition },
+);
+
+export const handleDownVoteComment = createAsyncThunk<
+  { message: string; status: string; data: { vote: Vote } },
+  VoteCommentArgs,
+  { state: RootState; rejectValue: unknown }
+>(
+  'threads/handleDownVoteComment',
+  async (payload, thunkApi) => {
+    const { threadId, commentId } = payload;
+
+    try {
+      const response = await api.post(`/threads/${threadId}/comments/${commentId}/down-vote`);
+      return response.data;
+    } catch (error) {
+      return thunkApi.rejectWithValue(toApiError(error));
+    }
+  },
+  { condition: voteCommentCondition },
+);
+
+export const handleNeutralVoteComment = createAsyncThunk<
+  { message: string; status: string; data: { vote: Vote } },
+  VoteCommentArgs,
+  { state: RootState; rejectValue: unknown }
+>(
+  'threads/handleNeutralVoteComment',
+  async (payload, thunkApi) => {
+    const { threadId, commentId } = payload;
+
+    try {
+      const response = await api.post(`/threads/${threadId}/comments/${commentId}/neutral-vote`);
+      return response.data;
+    } catch (error) {
+      return thunkApi.rejectWithValue(toApiError(error));
+    }
+  },
+  { condition: voteCommentCondition },
 );
 
 // Slice
@@ -323,9 +411,9 @@ const threadSlice = createSlice({
       state.error = action.payload ?? action.error;
     });
 
-    // handleUpVote
-    builder.addCase(handleUpVote.pending, (state, action) => {
-      state.upVoteStatus = FETCH_STATUS.loading;
+    // handleUpVoteThread
+    builder.addCase(handleUpVoteThread.pending, (state, action) => {
+      state.upVoteThreadStatus = FETCH_STATUS.loading;
       state.error = null;
 
       const { threadId, userId } = action.meta.arg;
@@ -334,7 +422,7 @@ const threadSlice = createSlice({
       const thread = state.entities[threadId];
       if (!thread) return;
 
-      state.voteOptimistic[action.meta.requestId] = {
+      state.voteOptimisticThread[action.meta.requestId] = {
         threadId,
         userId,
         prev: {
@@ -346,9 +434,9 @@ const threadSlice = createSlice({
       thread.downVotesBy = removeUserFromVote(thread.downVotesBy, userId);
       addUniqueVote(thread.upVotesBy, userId);
     });
-    builder.addCase(handleUpVote.fulfilled, (state, action) => {
-      state.upVoteStatus = FETCH_STATUS.succeeded;
-      delete state.voteOptimistic[action.meta.requestId];
+    builder.addCase(handleUpVoteThread.fulfilled, (state, action) => {
+      state.upVoteThreadStatus = FETCH_STATUS.succeeded;
+      delete state.voteOptimisticThread[action.meta.requestId];
 
       const { threadId } = action.meta.arg;
       if (state.voteInFlightByThreadId[threadId] === action.meta.requestId) {
@@ -362,8 +450,8 @@ const threadSlice = createSlice({
       thread.downVotesBy = removeUserFromVote(thread.downVotesBy, userId);
       addUniqueVote(thread.upVotesBy, userId);
     });
-    builder.addCase(handleUpVote.rejected, (state, action) => {
-      state.upVoteStatus = FETCH_STATUS.failed;
+    builder.addCase(handleUpVoteThread.rejected, (state, action) => {
+      state.upVoteThreadStatus = FETCH_STATUS.failed;
       state.error = action.payload ?? action.error;
 
       const { threadId } = action.meta.arg;
@@ -371,8 +459,8 @@ const threadSlice = createSlice({
         state.voteInFlightByThreadId[threadId] = null;
       }
 
-      const snap = state.voteOptimistic[action.meta.requestId];
-      delete state.voteOptimistic[action.meta.requestId];
+      const snap = state.voteOptimisticThread[action.meta.requestId];
+      delete state.voteOptimisticThread[action.meta.requestId];
       if (!snap) return;
       const thread = state.entities[snap.threadId];
       if (!thread) return;
@@ -385,9 +473,9 @@ const threadSlice = createSlice({
       if (snap.prev.down) addUniqueVote(thread.downVotesBy, snap.userId);
     });
 
-    // handleDownVote
-    builder.addCase(handleDownVote.pending, (state, action) => {
-      state.downVoteStatus = FETCH_STATUS.loading;
+    // handleDownVoteThread
+    builder.addCase(handleDownVoteThread.pending, (state, action) => {
+      state.downVoteThreadStatus = FETCH_STATUS.loading;
       state.error = null;
 
       const { threadId, userId } = action.meta.arg;
@@ -396,7 +484,7 @@ const threadSlice = createSlice({
       const thread = state.entities[threadId];
       if (!thread) return;
 
-      state.voteOptimistic[action.meta.requestId] = {
+      state.voteOptimisticThread[action.meta.requestId] = {
         threadId,
         userId,
         prev: {
@@ -408,9 +496,9 @@ const threadSlice = createSlice({
       thread.upVotesBy = removeUserFromVote(thread.upVotesBy, userId);
       addUniqueVote(thread.downVotesBy, userId);
     });
-    builder.addCase(handleDownVote.fulfilled, (state, action) => {
-      state.downVoteStatus = FETCH_STATUS.succeeded;
-      delete state.voteOptimistic[action.meta.requestId];
+    builder.addCase(handleDownVoteThread.fulfilled, (state, action) => {
+      state.downVoteThreadStatus = FETCH_STATUS.succeeded;
+      delete state.voteOptimisticThread[action.meta.requestId];
 
       const { threadId } = action.meta.arg;
       if (state.voteInFlightByThreadId[threadId] === action.meta.requestId) {
@@ -424,8 +512,8 @@ const threadSlice = createSlice({
       thread.upVotesBy = removeUserFromVote(thread.upVotesBy, userId);
       addUniqueVote(thread.downVotesBy, userId);
     });
-    builder.addCase(handleDownVote.rejected, (state, action) => {
-      state.upVoteStatus = FETCH_STATUS.failed;
+    builder.addCase(handleDownVoteThread.rejected, (state, action) => {
+      state.upVoteThreadStatus = FETCH_STATUS.failed;
       state.error = action.payload ?? action.error;
 
       const { threadId } = action.meta.arg;
@@ -433,8 +521,8 @@ const threadSlice = createSlice({
         state.voteInFlightByThreadId[threadId] = null;
       }
 
-      const snap = state.voteOptimistic[action.meta.requestId];
-      delete state.voteOptimistic[action.meta.requestId];
+      const snap = state.voteOptimisticThread[action.meta.requestId];
+      delete state.voteOptimisticThread[action.meta.requestId];
       if (!snap) return;
 
       const thread = state.entities[snap.threadId];
@@ -448,9 +536,9 @@ const threadSlice = createSlice({
       if (snap.prev.down) addUniqueVote(thread.downVotesBy, snap.userId);
     });
 
-    // handleNeutralVote
-    builder.addCase(handleNeutralVote.pending, (state, action) => {
-      state.neutralVoteStatus = FETCH_STATUS.loading;
+    // handleNeutralVoteThread
+    builder.addCase(handleNeutralVoteThread.pending, (state, action) => {
+      state.neutralVoteThreadStatus = FETCH_STATUS.loading;
       state.error = null;
 
       const { threadId, userId } = action.meta.arg;
@@ -459,7 +547,7 @@ const threadSlice = createSlice({
       const thread = state.entities[threadId];
       if (!thread) return;
 
-      state.voteOptimistic[action.meta.requestId] = {
+      state.voteOptimisticThread[action.meta.requestId] = {
         threadId,
         userId,
         prev: {
@@ -472,9 +560,9 @@ const threadSlice = createSlice({
       thread.upVotesBy = removeUserFromVote(thread.upVotesBy, userId);
       thread.downVotesBy = removeUserFromVote(thread.downVotesBy, userId);
     });
-    builder.addCase(handleNeutralVote.fulfilled, (state, action) => {
-      state.neutralVoteStatus = FETCH_STATUS.succeeded;
-      delete state.voteOptimistic[action.meta.requestId];
+    builder.addCase(handleNeutralVoteThread.fulfilled, (state, action) => {
+      state.neutralVoteThreadStatus = FETCH_STATUS.succeeded;
+      delete state.voteOptimisticThread[action.meta.requestId];
 
       const { threadId } = action.meta.arg;
       if (state.voteInFlightByThreadId[threadId] === action.meta.requestId) {
@@ -488,8 +576,8 @@ const threadSlice = createSlice({
       thread.upVotesBy = removeUserFromVote(thread.upVotesBy, userId);
       thread.downVotesBy = removeUserFromVote(thread.downVotesBy, userId);
     });
-    builder.addCase(handleNeutralVote.rejected, (state, action) => {
-      state.neutralVoteStatus = FETCH_STATUS.failed;
+    builder.addCase(handleNeutralVoteThread.rejected, (state, action) => {
+      state.neutralVoteThreadStatus = FETCH_STATUS.failed;
       state.error = action.payload ?? action.error;
 
       const { threadId } = action.meta.arg;
@@ -497,8 +585,8 @@ const threadSlice = createSlice({
         state.voteInFlightByThreadId[threadId] = null;
       }
 
-      const snap = state.voteOptimistic[action.meta.requestId];
-      delete state.voteOptimistic[action.meta.requestId];
+      const snap = state.voteOptimisticThread[action.meta.requestId];
+      delete state.voteOptimisticThread[action.meta.requestId];
       if (!snap) return;
 
       const thread = state.entities[snap.threadId];
@@ -509,6 +597,242 @@ const threadSlice = createSlice({
 
       if (snap.prev.up) addUniqueVote(thread.upVotesBy, snap.userId);
       if (snap.prev.down) addUniqueVote(thread.downVotesBy, snap.userId);
+    });
+
+    // handleUpVoteComment
+    builder.addCase(handleUpVoteComment.pending, (state, action) => {
+      state.upVoteCommentStatus = FETCH_STATUS.loading;
+      state.error = null;
+
+      const { threadId, userId, commentId } = action.meta.arg;
+      state.voteInFlightByCommentId[commentId] = action.meta.requestId;
+
+      const thread = state.entities[threadId];
+      if (!thread) return;
+
+      if (Array.isArray(thread.comments)) {
+        const comment = thread.comments.find((comment) => comment.id === commentId);
+        if (!comment) return;
+
+        state.voteOptimisticComment[action.meta.requestId] = {
+          threadId,
+          commentId,
+          userId,
+          prev: {
+            up: comment.upVotesBy.includes(userId),
+            down: comment.downVotesBy.includes(userId),
+          },
+        };
+
+        comment.downVotesBy = removeUserFromVote(comment.downVotesBy, userId);
+        addUniqueVote(comment.upVotesBy, userId);
+      }
+    });
+    builder.addCase(handleUpVoteComment.fulfilled, (state, action) => {
+      state.upVoteCommentStatus = FETCH_STATUS.succeeded;
+      delete state.voteOptimisticComment[action.meta.requestId];
+
+      const { threadId, commentId } = action.meta.arg;
+      if (state.voteInFlightByCommentId[commentId] === action.meta.requestId) {
+        state.voteInFlightByCommentId[commentId] = null;
+      }
+
+      const thread = state.entities[threadId];
+      if (!thread) return;
+
+      if (Array.isArray(thread.comments)) {
+        const comment = thread.comments.find((comment) => comment.id === commentId);
+        if (!comment) return;
+
+        const userId = action.payload.data.vote.userId;
+        comment.downVotesBy = removeUserFromVote(comment.downVotesBy, userId);
+        addUniqueVote(comment.upVotesBy, userId);
+      }
+    });
+    builder.addCase(handleUpVoteComment.rejected, (state, action) => {
+      state.upVoteCommentStatus = FETCH_STATUS.failed;
+      state.error = action.payload ?? action.error;
+
+      const { commentId } = action.meta.arg;
+      if (state.voteInFlightByCommentId[commentId] === action.meta.requestId) {
+        state.voteInFlightByCommentId[commentId] = null;
+      }
+
+      const snap = state.voteOptimisticComment[action.meta.requestId];
+      delete state.voteOptimisticComment[action.meta.requestId];
+      if (!snap) return;
+      const thread = state.entities[snap.threadId];
+      if (!thread) return;
+
+      if (Array.isArray(thread.comments)) {
+        const comment = thread.comments.find((comment) => comment.id === commentId);
+        if (!comment) return;
+
+        // rollback
+        comment.upVotesBy = removeUserFromVote(comment.upVotesBy, snap.userId);
+        comment.downVotesBy = removeUserFromVote(comment.downVotesBy, snap.userId);
+
+        if (snap.prev.up) addUniqueVote(comment.upVotesBy, snap.userId);
+        if (snap.prev.down) addUniqueVote(comment.downVotesBy, snap.userId);
+      }
+    });
+
+    // handleDownVoteComment
+    builder.addCase(handleDownVoteComment.pending, (state, action) => {
+      state.downVoteCommentStatus = FETCH_STATUS.loading;
+      state.error = null;
+
+      const { threadId, userId, commentId } = action.meta.arg;
+      state.voteInFlightByCommentId[commentId] = action.meta.requestId;
+
+      const thread = state.entities[threadId];
+      if (!thread) return;
+
+      if (Array.isArray(thread.comments)) {
+        const comment = thread.comments.find((comment) => comment.id === commentId);
+        if (!comment) return;
+
+        state.voteOptimisticComment[action.meta.requestId] = {
+          threadId,
+          commentId,
+          userId,
+          prev: {
+            up: comment.upVotesBy.includes(userId),
+            down: comment.downVotesBy.includes(userId),
+          },
+        };
+
+        comment.upVotesBy = removeUserFromVote(comment.upVotesBy, userId);
+        addUniqueVote(comment.downVotesBy, userId);
+      }
+    });
+    builder.addCase(handleDownVoteComment.fulfilled, (state, action) => {
+      state.downVoteCommentStatus = FETCH_STATUS.succeeded;
+      delete state.voteOptimisticComment[action.meta.requestId];
+
+      const { threadId, commentId } = action.meta.arg;
+      if (state.voteInFlightByCommentId[commentId] === action.meta.requestId) {
+        state.voteInFlightByCommentId[commentId] = null;
+      }
+
+      const thread = state.entities[threadId];
+      if (!thread) return;
+
+      if (Array.isArray(thread.comments)) {
+        const comment = thread.comments.find((comment) => comment.id === commentId);
+        if (!comment) return;
+
+        const userId = action.payload.data.vote.userId;
+        comment.upVotesBy = removeUserFromVote(comment.upVotesBy, userId);
+        addUniqueVote(comment.downVotesBy, userId);
+      }
+    });
+    builder.addCase(handleDownVoteComment.rejected, (state, action) => {
+      state.downVoteCommentStatus = FETCH_STATUS.failed;
+      state.error = action.payload ?? action.error;
+
+      const { commentId } = action.meta.arg;
+      if (state.voteInFlightByCommentId[commentId] === action.meta.requestId) {
+        state.voteInFlightByCommentId[commentId] = null;
+      }
+
+      const snap = state.voteOptimisticComment[action.meta.requestId];
+      delete state.voteOptimisticComment[action.meta.requestId];
+      if (!snap) return;
+
+      const thread = state.entities[snap.threadId];
+      if (!thread) return;
+
+      if (Array.isArray(thread.comments)) {
+        const comment = thread.comments.find((comment) => comment.id === commentId);
+        if (!comment) return;
+
+        // rollback
+        comment.upVotesBy = removeUserFromVote(comment.upVotesBy, snap.userId);
+        comment.downVotesBy = removeUserFromVote(comment.downVotesBy, snap.userId);
+
+        if (snap.prev.up) addUniqueVote(comment.upVotesBy, snap.userId);
+        if (snap.prev.down) addUniqueVote(comment.downVotesBy, snap.userId);
+      }
+    });
+
+    // handleNeutralVoteComment
+    builder.addCase(handleNeutralVoteComment.pending, (state, action) => {
+      state.neutralVoteCommentStatus = FETCH_STATUS.loading;
+      state.error = null;
+
+      const { threadId, userId, commentId } = action.meta.arg;
+      state.voteInFlightByCommentId[commentId] = action.meta.requestId;
+
+      const thread = state.entities[threadId];
+      if (!thread) return;
+
+      if (Array.isArray(thread.comments)) {
+        const comment = thread.comments.find((comment) => comment.id === commentId);
+        if (!comment) return;
+
+        state.voteOptimisticComment[action.meta.requestId] = {
+          threadId,
+          commentId,
+          userId,
+          prev: {
+            up: comment.upVotesBy.includes(userId),
+            down: comment.downVotesBy.includes(userId),
+          },
+        };
+
+        comment.upVotesBy = removeUserFromVote(comment.upVotesBy, userId);
+        comment.downVotesBy = removeUserFromVote(comment.downVotesBy, userId);
+      }
+    });
+    builder.addCase(handleNeutralVoteComment.fulfilled, (state, action) => {
+      state.neutralVoteCommentStatus = FETCH_STATUS.succeeded;
+      delete state.voteOptimisticComment[action.meta.requestId];
+
+      const { threadId, commentId } = action.meta.arg;
+      if (state.voteInFlightByCommentId[commentId] === action.meta.requestId) {
+        state.voteInFlightByCommentId[commentId] = null;
+      }
+
+      const thread = state.entities[threadId];
+      if (!thread) return;
+
+      if (Array.isArray(thread.comments)) {
+        const comment = thread.comments.find((comment) => comment.id === commentId);
+        if (!comment) return;
+
+        const userId = action.payload.data.vote.userId;
+        comment.upVotesBy = removeUserFromVote(comment.upVotesBy, userId);
+        comment.downVotesBy = removeUserFromVote(comment.downVotesBy, userId);
+      }
+    });
+    builder.addCase(handleNeutralVoteComment.rejected, (state, action) => {
+      state.neutralVoteCommentStatus = FETCH_STATUS.failed;
+      state.error = action.payload ?? action.error;
+
+      const { commentId } = action.meta.arg;
+      if (state.voteInFlightByCommentId[commentId] === action.meta.requestId) {
+        state.voteInFlightByCommentId[commentId] = null;
+      }
+
+      const snap = state.voteOptimisticComment[action.meta.requestId];
+      delete state.voteOptimisticComment[action.meta.requestId];
+      if (!snap) return;
+
+      const thread = state.entities[snap.threadId];
+      if (!thread) return;
+
+      if (Array.isArray(thread.comments)) {
+        const comment = thread.comments.find((comment) => comment.id === commentId);
+        if (!comment) return;
+
+        // rollback
+        comment.upVotesBy = removeUserFromVote(comment.upVotesBy, snap.userId);
+        comment.downVotesBy = removeUserFromVote(comment.downVotesBy, snap.userId);
+
+        if (snap.prev.up) addUniqueVote(comment.upVotesBy, snap.userId);
+        if (snap.prev.down) addUniqueVote(comment.downVotesBy, snap.userId);
+      }
     });
   },
 });

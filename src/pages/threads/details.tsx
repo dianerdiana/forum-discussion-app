@@ -6,6 +6,7 @@ import { CommentItem } from '@/features/thread/components/comment-item';
 import { CreateCommentForm } from '@/features/thread/components/create-comment-form';
 import { ThreadItem } from '@/features/thread/components/thread-item';
 import { getThread, selectSelectedThread } from '@/features/thread/redux/thread-slice';
+import { selectOwnProfile } from '@/features/user/redux/user-slice';
 import { useAppDispatch, useAppSelector } from '@/redux/hooks';
 
 const DetailThreadPage = () => {
@@ -14,6 +15,7 @@ const DetailThreadPage = () => {
 
   const dispatch = useAppDispatch();
   const selectedThread = useAppSelector(selectSelectedThread);
+  const ownProfile = useAppSelector(selectOwnProfile);
 
   useEffect(() => {
     dispatch(getThread({ threadId }));
@@ -26,10 +28,12 @@ const DetailThreadPage = () => {
       </div>
       {selectedThread ? (
         <div className='px-4 space-y-4'>
-          <ThreadItem thread={selectedThread} isDetail />
+          <ThreadItem thread={selectedThread} ownProfile={ownProfile} isDetail />
           <CreateCommentForm threadId={selectedThread.id} totalComments={selectedThread.comments?.length || 0} />
           {selectedThread.comments &&
-            selectedThread.comments.map((comment) => <CommentItem key={comment.id} comment={comment} />)}
+            selectedThread.comments.map((comment) => (
+              <CommentItem key={comment.id} comment={comment} ownProfile={ownProfile} threadId={threadId} />
+            ))}
         </div>
       ) : null}
     </Container>

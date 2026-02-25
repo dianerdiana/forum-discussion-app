@@ -19,7 +19,7 @@ import type { Thread } from '@/types/thread-type';
 import type { User } from '@/types/user-type';
 import { cn, postedAt } from '@/utils/utils';
 
-import { handleDownVote, handleNeutralVote, handleUpVote } from '../redux/thread-slice';
+import { handleDownVoteThread, handleNeutralVoteThread, handleUpVoteThread } from '../redux/thread-slice';
 
 type ThreadItemProps = {
   thread: Thread;
@@ -38,23 +38,33 @@ export const ThreadItem = ({ thread, isDetail = false, ownProfile }: ThreadItemP
     if (!userId) return;
 
     if (votedDown) {
-      dispatch(handleUpVote({ threadId: thread.id, userId, showGlobalLoading: false }));
+      dispatch(handleUpVoteThread({ threadId: thread.id, userId, showGlobalLoading: false }));
       return;
     }
 
-    dispatch((votedUp ? handleNeutralVote : handleUpVote)({ threadId: thread.id, userId, showGlobalLoading: false }));
+    dispatch(
+      (votedUp ? handleNeutralVoteThread : handleUpVoteThread)({
+        threadId: thread.id,
+        userId,
+        showGlobalLoading: false,
+      }),
+    );
   };
 
   const onVotedDown = () => {
     if (!userId) return;
 
     if (votedUp) {
-      dispatch(handleDownVote({ threadId: thread.id, userId, showGlobalLoading: false }));
+      dispatch(handleDownVoteThread({ threadId: thread.id, userId, showGlobalLoading: false }));
       return;
     }
 
     dispatch(
-      (votedDown ? handleNeutralVote : handleDownVote)({ threadId: thread.id, userId, showGlobalLoading: false }),
+      (votedDown ? handleNeutralVoteThread : handleDownVoteThread)({
+        threadId: thread.id,
+        userId,
+        showGlobalLoading: false,
+      }),
     );
   };
 
