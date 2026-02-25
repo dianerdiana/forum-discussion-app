@@ -4,6 +4,7 @@ import { Provider } from 'react-redux';
 import { RouterProvider } from 'react-router-dom';
 
 import FallbackSpinner from './components/fallback-spinner.tsx';
+import { Toaster } from './components/ui/sonner.tsx';
 import './index.css';
 import { store } from './redux/store.ts';
 import { router } from './router/router.tsx';
@@ -15,6 +16,7 @@ createRoot(document.getElementById('root')!).render(
       <AuthContextProvider>
         <Suspense fallback={<FallbackSpinner />}>
           <RouterProvider router={router} />
+          <Toaster position='top-right' />
         </Suspense>
       </AuthContextProvider>
     </Provider>

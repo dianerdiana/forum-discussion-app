@@ -95,8 +95,8 @@ const userSlice = createSlice({
   name: 'users',
   initialState,
   reducers: {
-    setSelectedUser(state, action: PayloadAction<string | null>) {
-      state.selectedId = action.payload;
+    setPreloadStatus(state, action: PayloadAction<string>) {
+      state.preloadStatus = action.payload;
     },
     clearUserError(state) {
       state.error = null;
@@ -134,7 +134,7 @@ const userSlice = createSlice({
   },
 });
 
-export const { setSelectedUser, clearUserError } = userSlice.actions;
+export const { setPreloadStatus, clearUserError } = userSlice.actions;
 
 export default userSlice.reducer;
 

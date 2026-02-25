@@ -24,6 +24,7 @@ const HomePage = () => {
   const threadItems = hashValue ? allThreads.filter((thread) => thread.category === hashValue) : allThreads;
 
   const mapAllUser = new Map<string | undefined, User>(allUsers.map((user) => [user.id, user]));
+  const uniqueCategories = new Set<string>(allThreads.map((thread) => thread.category));
 
   useEffect(() => {
     dispatch(getThreads());
@@ -54,9 +55,9 @@ const HomePage = () => {
         <p>Popular Categories:</p>
 
         <div className='flex flex-wrap gap-1'>
-          {allThreads.map((thread) => (
-            <Button variant={hashValue === thread.category ? 'default' : 'outline'} key={thread.id} asChild>
-              <Link to={`/#${thread.category}`}>#{thread.category}</Link>
+          {[...uniqueCategories].map((category) => (
+            <Button variant={hashValue === category ? 'default' : 'outline'} key={category} asChild>
+              <Link to={`/#${category}`}>#{category}</Link>
             </Button>
           ))}
         </div>

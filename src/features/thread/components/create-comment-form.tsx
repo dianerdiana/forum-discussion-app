@@ -1,6 +1,7 @@
-import { Controller, type SubmitErrorHandler, type SubmitHandler, useForm } from 'react-hook-form';
+import { Controller, type SubmitHandler, useForm } from 'react-hook-form';
 
 import { zodResolver } from '@hookform/resolvers/zod';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -30,11 +31,10 @@ export const CreateCommentForm = ({ threadId, totalComments }: CreateCommentForm
 
     if (payload.status === 'success') {
       reset();
+      toast.success(payload.message);
+    } else {
+      toast.error(payload.message);
     }
-  };
-
-  const onInvalid: SubmitErrorHandler<CreateCommentType> = (error) => {
-    console.log(error);
   };
 
   return (
@@ -43,7 +43,7 @@ export const CreateCommentForm = ({ threadId, totalComments }: CreateCommentForm
         <CardTitle className='text-xl'>Comments ({totalComments})</CardTitle>
       </CardHeader>
       <CardContent>
-        <form id='create-comment-form' onSubmit={handleSubmit(onSubmit, onInvalid)}>
+        <form id='create-comment-form' onSubmit={handleSubmit(onSubmit)}>
           <FieldGroup>
             {/* Content */}
             <Controller

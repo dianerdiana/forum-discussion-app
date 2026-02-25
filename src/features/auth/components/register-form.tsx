@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Controller, type SubmitErrorHandler, type SubmitHandler, useForm } from 'react-hook-form';
+import { Controller, type SubmitHandler, useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeClosed, KeyRound, Mail, User2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -17,6 +18,8 @@ import type { RegisterDataType } from '../types/register-type';
 
 export const RegisterForm = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
   const navigate = useNavigate();
 
   const { control, handleSubmit } = useForm<RegisterDataType>({
@@ -31,19 +34,23 @@ export const RegisterForm = () => {
   const toggleShowPassword = () => setShowPassword((prevState) => !prevState);
 
   const onSubmit: SubmitHandler<RegisterDataType> = async (data: RegisterDataType) => {
-    try {
-      const response = await api.register(data);
+    setIsLoading(true);
 
-      if (response.data.status === 'success') {
-        navigate('/login');
-      }
-    } catch (error) {
-      const apiError = toApiError(error);
-      console.log(apiError);
-    }
+    toast.promise(api.register(data), {
+      loading: 'Logging in...',
+      success: (response) => {
+        if (response.data.status === 'success') {
+          navigate('/login');
+        }
+        return response.data.message;
+      },
+      error: (error) => {
+        const apiError = toApiError(error);
+        return apiError.message;
+      },
+      finally: () => setIsLoading(false),
+    });
   };
-
-  const onInvalid: SubmitErrorHandler<RegisterDataType> = (error) => console.log(error);
 
   return (
     <Card>
@@ -52,7 +59,7 @@ export const RegisterForm = () => {
         <CardDescription className='text-center'>Enter your information below to create your account</CardDescription>
       </CardHeader>
       <CardContent>
-        <form id='form-register' onSubmit={handleSubmit(onSubmit, onInvalid)}>
+        <form id='form-register' onSubmit={handleSubmit(onSubmit)}>
           <FieldGroup>
             {/* Name */}
             <Controller
@@ -142,7 +149,7 @@ export const RegisterForm = () => {
       </CardContent>
       <CardFooter>
         <Field>
-          <Button type='submit' form='form-register' className='block w-full'>
+          <Button type='submit' form='form-register' className='block w-full' disabled={isLoading}>
             Register
           </Button>
           <p className='text-muted-foreground text-sm text-center'>

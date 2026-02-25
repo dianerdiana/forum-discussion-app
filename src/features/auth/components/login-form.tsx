@@ -1,9 +1,10 @@
 import { useState } from 'react';
-import { Controller, type SubmitErrorHandler, type SubmitHandler, useForm } from 'react-hook-form';
+import { Controller, type SubmitHandler, useForm } from 'react-hook-form';
 import { Link, useNavigate } from 'react-router';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeClosed, KeyRound, User2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +21,7 @@ import type { LoginDataType } from '../types/login-type';
 
 export const LoginForm = () => {
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
 
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
@@ -31,28 +33,33 @@ export const LoginForm = () => {
       email: '',
       password: '',
     },
+    criteriaMode: 'firstError',
   });
 
   const toggleShowPassword = () => setShowPassword((prevState) => !prevState);
 
   const onSubmit: SubmitHandler<LoginDataType> = async (data: LoginDataType) => {
-    try {
-      const response = await api.login(data);
+    setIsLoading(true);
 
-      if (response.data.status === 'success') {
-        dispatch(handleLogin(response.data.data.token));
-        auth.refreshAuth();
-        navigate('/');
-      }
-    } catch (error) {
-      setError('email', { type: 'validate' });
-      setError('password', { type: 'validate' });
-      const apiError = toApiError(error);
-      console.log(apiError);
-    }
+    toast.promise(api.login(data), {
+      loading: 'Logging in...',
+      success: (response) => {
+        if (response.data.status === 'success') {
+          dispatch(handleLogin(response.data.data.token));
+          auth.refreshAuth();
+          navigate('/');
+        }
+        return response.data.message;
+      },
+      error: (error) => {
+        setError('email', { type: 'validate' });
+        setError('password', { type: 'validate' });
+        const apiError = toApiError(error);
+        return apiError.message;
+      },
+      finally: () => setIsLoading(false),
+    });
   };
-
-  const onInvalid: SubmitErrorHandler<LoginDataType> = (error) => console.log(error);
 
   return (
     <Card>
@@ -61,7 +68,7 @@ export const LoginForm = () => {
         <CardDescription className='text-center'>Enter your email below to login to your account</CardDescription>
       </CardHeader>
       <CardContent>
-        <form id='form-login' onSubmit={handleSubmit(onSubmit, onInvalid)}>
+        <form id='form-login' onSubmit={handleSubmit(onSubmit)}>
           <FieldGroup>
             {/* Username */}
             <Controller
@@ -125,8 +132,8 @@ export const LoginForm = () => {
       </CardContent>
       <CardFooter>
         <Field>
-          <Button type='submit' form='form-login' className='block w-full'>
-            Login
+          <Button type='submit' form='form-login' className='block w-full' disabled={isLoading}>
+            Submit
           </Button>
           <p className='text-muted-foreground text-sm text-center'>
             Don't have an account?{' '}

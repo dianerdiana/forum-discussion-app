@@ -1,8 +1,9 @@
-import { Controller, type SubmitErrorHandler, type SubmitHandler, useForm } from 'react-hook-form';
+import { Controller, type SubmitHandler, useForm } from 'react-hook-form';
 import { useNavigate } from 'react-router';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Baseline, MessageCircleMore, Tag } from 'lucide-react';
+import { toast } from 'sonner';
 
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardFooter } from '@/components/ui/card';
@@ -33,17 +34,16 @@ export const CreateThreadForm = () => {
 
     if (payload.status === 'success') {
       navigate('/');
+      toast.success(payload.message);
+    } else {
+      toast.error(payload.message);
     }
-  };
-
-  const onInvalid: SubmitErrorHandler<CreateThreadType> = (error) => {
-    console.log(error);
   };
 
   return (
     <Card className='min-w-lg'>
       <CardContent>
-        <form id='create-thread-form' onSubmit={handleSubmit(onSubmit, onInvalid)}>
+        <form id='create-thread-form' onSubmit={handleSubmit(onSubmit)}>
           <FieldGroup>
             {/* Title */}
             <Controller
