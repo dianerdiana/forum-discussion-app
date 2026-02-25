@@ -24,9 +24,9 @@ export class JwtService {
 
   isAlreadyFetchingAccessToken = false;
 
-  subscribers: Function[] = [];
+  subscribers: ((accessToken: string) => void)[] = [];
 
-  constructor({ baseURL, ...overrideServiceConfig }: JwtServiceConfig) {
+  constructor({ ...overrideServiceConfig }: JwtServiceConfig) {
     this.jwtConfig = { ...this.jwtConfig, ...overrideServiceConfig };
 
     this.axin = axios.create({
@@ -121,7 +121,7 @@ export class JwtService {
     this.subscribers = [];
   }
 
-  addSubscriber(callback: Function) {
+  addSubscriber(callback: (token: string) => void) {
     this.subscribers.push(callback);
   }
 
