@@ -138,7 +138,7 @@ export const { setSelectedUser, clearUserError } = userSlice.actions;
 
 export default userSlice.reducer;
 
-// ===== Selectors (entity adapter selectors)
+//  Selectors (entity adapter selectors)
 export const userSelectors = usersAdapter.getSelectors<RootState>((state) => state.users);
 export const selectUsersListStatus = (state: RootState) => state.users.listStatus;
 export const selectPreloadStatus = (state: RootState) => state.users.preloadStatus;

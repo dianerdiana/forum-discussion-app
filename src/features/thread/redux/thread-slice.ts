@@ -5,6 +5,7 @@ import { toApiError } from '@/configs/auth/jwt-service';
 import type { RootState } from '@/redux/store';
 import type { Comment } from '@/types/comment-type';
 import type { Thread } from '@/types/thread-type';
+import type { Vote } from '@/types/vote-type';
 import { FETCH_STATUS } from '@/utils/constants/fetch-status';
 
 import type { CreateCommentType } from '../types/create-comment-type';
@@ -17,9 +18,20 @@ type ThreadState = {
   detailStatus: string;
   createThreadStatus: string;
   createCommentStatus: string;
+  upVoteStatus: string;
+  downVoteStatus: string;
+  neutralVoteStatus: string;
+  voteOptimistic: Record<string, { threadId: string; userId: string; prev: { up: boolean; down: boolean } }>;
 
   error: unknown | null;
 };
+
+type ThunkThreadArgs = {
+  showGlobalLoading?: boolean; // default true
+  force?: boolean; // kalau mau bypass cache/condition
+};
+
+type VoteArgs = ThunkThreadArgs & { threadId: string; userId: string };
 
 // Entity Adapter
 const threadsAdapter = createEntityAdapter<Thread>({
@@ -28,17 +40,25 @@ const threadsAdapter = createEntityAdapter<Thread>({
 
 const initialState = threadsAdapter.getInitialState<ThreadState>({
   selectedId: null,
+
   listStatus: FETCH_STATUS.idle,
   detailStatus: FETCH_STATUS.idle,
   createThreadStatus: FETCH_STATUS.idle,
   createCommentStatus: FETCH_STATUS.idle,
+  upVoteStatus: FETCH_STATUS.idle,
+  downVoteStatus: FETCH_STATUS.idle,
+  neutralVoteStatus: FETCH_STATUS.idle,
+
+  voteOptimistic: {},
+
   error: null,
 });
 
-type ThunkThreadArgs = {
-  showGlobalLoading?: boolean; // default true
-  force?: boolean; // kalau mau bypass cache/condition
+const addUniqueVote = (arr: string[], userId: string) => {
+  if (!arr.includes(userId)) arr.push(userId);
 };
+
+const removeUserFromVote = (arr: string[], userId: string) => arr.filter((id) => id !== userId);
 
 // Thunks
 export const getThreads = createAsyncThunk<
@@ -72,11 +92,7 @@ export const getThreads = createAsyncThunk<
   },
 );
 
-export const getThread = createAsyncThunk<
-  Thread,
-  ThunkThreadArgs & { threadId: string },
-  { state: RootState; rejectValue: unknown }
->(
+export const getThread = createAsyncThunk<Thread, VoteArgs, { state: RootState; rejectValue: unknown }>(
   'threads/getThread',
   async ({ threadId }, thunkApi) => {
     try {
@@ -125,6 +141,45 @@ export const createComment = createAsyncThunk<
 >('threads/createComment', async ({ threadId, content }, thunkApi) => {
   try {
     const response = await api.post(`/threads/${threadId}/comments`, { content });
+    return response.data;
+  } catch (error) {
+    return thunkApi.rejectWithValue(toApiError(error));
+  }
+});
+
+export const handleUpVote = createAsyncThunk<
+  { message: string; status: string; data: { vote: Vote } },
+  VoteArgs,
+  { state: RootState; rejectValue: unknown }
+>('threads/handleUpVote', async (payload, thunkApi) => {
+  try {
+    const response = await api.post(`/threads/${payload.threadId}/up-vote`);
+    return response.data;
+  } catch (error) {
+    return thunkApi.rejectWithValue(toApiError(error));
+  }
+});
+
+export const handleDownVote = createAsyncThunk<
+  { message: string; status: string; data: { vote: Vote } },
+  VoteArgs,
+  { state: RootState; rejectValue: unknown }
+>('threads/handleDownVote', async (payload, thunkApi) => {
+  try {
+    const response = await api.post(`/threads/${payload.threadId}/down-vote`);
+    return response.data;
+  } catch (error) {
+    return thunkApi.rejectWithValue(toApiError(error));
+  }
+});
+
+export const handleNeutralVote = createAsyncThunk<
+  { message: string; status: string; data: { vote: Vote } },
+  VoteArgs,
+  { state: RootState; rejectValue: unknown }
+>('threads/handleNeutralVote', async (payload, thunkApi) => {
+  try {
+    const response = await api.post(`/threads/${payload.threadId}/neutral-vote`);
     return response.data;
   } catch (error) {
     return thunkApi.rejectWithValue(toApiError(error));
@@ -240,6 +295,164 @@ const threadSlice = createSlice({
       state.createCommentStatus = FETCH_STATUS.failed;
       state.error = action.payload ?? action.error;
     });
+
+    // handleUpVote
+    builder.addCase(handleUpVote.pending, (state, action) => {
+      state.upVoteStatus = FETCH_STATUS.loading;
+      state.error = null;
+
+      const { threadId, userId } = action.meta.arg;
+
+      const thread = state.entities[threadId];
+      if (!thread) return;
+
+      state.voteOptimistic[action.meta.requestId] = {
+        threadId,
+        userId,
+        prev: {
+          up: thread.upVotesBy.includes(userId),
+          down: thread.downVotesBy.includes(userId),
+        },
+      };
+
+      thread.downVotesBy = removeUserFromVote(thread.downVotesBy, userId);
+      addUniqueVote(thread.upVotesBy, userId);
+    });
+    builder.addCase(handleUpVote.fulfilled, (state, action) => {
+      state.upVoteStatus = FETCH_STATUS.succeeded;
+      delete state.voteOptimistic[action.meta.requestId];
+
+      const { threadId } = action.meta.arg;
+      const thread = state.entities[threadId];
+      if (!thread) return;
+
+      const userId = action.payload.data.vote.userId;
+      thread.downVotesBy = removeUserFromVote(thread.downVotesBy, userId);
+      addUniqueVote(thread.upVotesBy, userId);
+    });
+    builder.addCase(handleUpVote.rejected, (state, action) => {
+      state.upVoteStatus = FETCH_STATUS.failed;
+      state.error = action.payload ?? action.error;
+
+      const snap = state.voteOptimistic[action.meta.requestId];
+      delete state.voteOptimistic[action.meta.requestId];
+      if (!snap) return;
+
+      const thread = state.entities[snap.threadId];
+      if (!thread) return;
+
+      // rollback
+      thread.upVotesBy = removeUserFromVote(thread.upVotesBy, snap.userId);
+      thread.downVotesBy = removeUserFromVote(thread.downVotesBy, snap.userId);
+
+      if (snap.prev.up) addUniqueVote(thread.upVotesBy, snap.userId);
+      if (snap.prev.down) addUniqueVote(thread.downVotesBy, snap.userId);
+    });
+
+    // handleDownVote
+    builder.addCase(handleDownVote.pending, (state, action) => {
+      state.downVoteStatus = FETCH_STATUS.loading;
+      state.error = null;
+
+      const { threadId, userId } = action.meta.arg;
+
+      const thread = state.entities[threadId];
+      if (!thread) return;
+
+      state.voteOptimistic[action.meta.requestId] = {
+        threadId,
+        userId,
+        prev: {
+          up: thread.upVotesBy.includes(userId),
+          down: thread.downVotesBy.includes(userId),
+        },
+      };
+
+      thread.upVotesBy = removeUserFromVote(thread.upVotesBy, userId);
+      addUniqueVote(thread.downVotesBy, userId);
+    });
+    builder.addCase(handleDownVote.fulfilled, (state, action) => {
+      state.downVoteStatus = FETCH_STATUS.succeeded;
+      delete state.voteOptimistic[action.meta.requestId];
+
+      const { threadId } = action.meta.arg;
+      const thread = state.entities[threadId];
+      if (!thread) return;
+
+      const userId = action.payload.data.vote.userId;
+      thread.upVotesBy = removeUserFromVote(thread.upVotesBy, userId);
+      addUniqueVote(thread.downVotesBy, userId);
+    });
+    builder.addCase(handleDownVote.rejected, (state, action) => {
+      state.upVoteStatus = FETCH_STATUS.failed;
+      state.error = action.payload ?? action.error;
+
+      const snap = state.voteOptimistic[action.meta.requestId];
+      delete state.voteOptimistic[action.meta.requestId];
+      if (!snap) return;
+
+      const thread = state.entities[snap.threadId];
+      if (!thread) return;
+
+      // rollback
+      thread.upVotesBy = removeUserFromVote(thread.upVotesBy, snap.userId);
+      thread.downVotesBy = removeUserFromVote(thread.downVotesBy, snap.userId);
+
+      if (snap.prev.up) addUniqueVote(thread.upVotesBy, snap.userId);
+      if (snap.prev.down) addUniqueVote(thread.downVotesBy, snap.userId);
+    });
+
+    // handleNeutralVote
+    builder.addCase(handleNeutralVote.pending, (state, action) => {
+      state.neutralVoteStatus = FETCH_STATUS.loading;
+      state.error = null;
+
+      const { threadId, userId } = action.meta.arg;
+      const thread = state.entities[threadId];
+      if (!thread) return;
+
+      state.voteOptimistic[action.meta.requestId] = {
+        threadId,
+        userId,
+        prev: {
+          up: thread.upVotesBy.includes(userId),
+          down: thread.downVotesBy.includes(userId),
+        },
+      };
+
+      // set to NEUTRAL
+      thread.upVotesBy = removeUserFromVote(thread.upVotesBy, userId);
+      thread.downVotesBy = removeUserFromVote(thread.downVotesBy, userId);
+    });
+    builder.addCase(handleNeutralVote.fulfilled, (state, action) => {
+      state.neutralVoteStatus = FETCH_STATUS.succeeded;
+      delete state.voteOptimistic[action.meta.requestId];
+
+      const { threadId } = action.meta.arg;
+      const thread = state.entities[threadId];
+      if (!thread) return;
+
+      const userId = action.payload.data.vote.userId;
+      thread.upVotesBy = removeUserFromVote(thread.upVotesBy, userId);
+      thread.downVotesBy = removeUserFromVote(thread.downVotesBy, userId);
+    });
+    builder.addCase(handleNeutralVote.rejected, (state, action) => {
+      state.neutralVoteStatus = FETCH_STATUS.failed;
+      state.error = action.payload ?? action.error;
+
+      const snap = state.voteOptimistic[action.meta.requestId];
+      delete state.voteOptimistic[action.meta.requestId];
+      if (!snap) return;
+
+      const thread = state.entities[snap.threadId];
+      if (!thread) return;
+
+      thread.upVotesBy = removeUserFromVote(thread.upVotesBy, snap.userId);
+      thread.downVotesBy = removeUserFromVote(thread.downVotesBy, snap.userId);
+
+      if (snap.prev.up) addUniqueVote(thread.upVotesBy, snap.userId);
+      if (snap.prev.down) addUniqueVote(thread.downVotesBy, snap.userId);
+    });
   },
 });
 
@@ -247,7 +460,7 @@ export const { setSelectedThread, clearThreadError } = threadSlice.actions;
 
 export default threadSlice.reducer;
 
-// ===== Selectors (entity adapter selectors)
+//  Selectors (entity adapter selectors)
 export const threadSelectors = threadsAdapter.getSelectors<RootState>((state) => state.threads);
 export const selectThreadsListStatus = (state: RootState) => state.threads.listStatus;
 
