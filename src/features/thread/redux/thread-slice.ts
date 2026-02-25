@@ -22,6 +22,7 @@ type ThreadState = {
   downVoteStatus: string;
   neutralVoteStatus: string;
   voteOptimistic: Record<string, { threadId: string; userId: string; prev: { up: boolean; down: boolean } }>;
+  voteInFlightByThreadId: Record<string, string | null>; // threadId -> requestId
 
   error: unknown | null;
 };
@@ -50,6 +51,7 @@ const initialState = threadsAdapter.getInitialState<ThreadState>({
   neutralVoteStatus: FETCH_STATUS.idle,
 
   voteOptimistic: {},
+  voteInFlightByThreadId: {},
 
   error: null,
 });
@@ -59,6 +61,19 @@ const addUniqueVote = (arr: string[], userId: string) => {
 };
 
 const removeUserFromVote = (arr: string[], userId: string) => arr.filter((id) => id !== userId);
+
+const voteThreadCondition = (arg: VoteArgs, { getState }: { getState: () => RootState }) => {
+  const state = getState();
+
+  // bypass kalau memang ingin (mis. untuk recovery)
+  if (arg.force) return true;
+
+  const inFlight = state.threads.voteInFlightByThreadId[arg.threadId];
+  // kalau masih ada requestId tercatat, berarti sedang vote untuk thread itu
+  if (inFlight) return false;
+
+  return true;
+};
 
 // Thunks
 export const getThreads = createAsyncThunk<
@@ -151,40 +166,52 @@ export const handleUpVote = createAsyncThunk<
   { message: string; status: string; data: { vote: Vote } },
   VoteArgs,
   { state: RootState; rejectValue: unknown }
->('threads/handleUpVote', async (payload, thunkApi) => {
-  try {
-    const response = await api.post(`/threads/${payload.threadId}/up-vote`);
-    return response.data;
-  } catch (error) {
-    return thunkApi.rejectWithValue(toApiError(error));
-  }
-});
+>(
+  'threads/handleUpVote',
+  async (payload, thunkApi) => {
+    try {
+      const response = await api.post(`/threads/${payload.threadId}/up-vote`);
+      return response.data;
+    } catch (error) {
+      return thunkApi.rejectWithValue(toApiError(error));
+    }
+  },
+  { condition: voteThreadCondition },
+);
 
 export const handleDownVote = createAsyncThunk<
   { message: string; status: string; data: { vote: Vote } },
   VoteArgs,
   { state: RootState; rejectValue: unknown }
->('threads/handleDownVote', async (payload, thunkApi) => {
-  try {
-    const response = await api.post(`/threads/${payload.threadId}/down-vote`);
-    return response.data;
-  } catch (error) {
-    return thunkApi.rejectWithValue(toApiError(error));
-  }
-});
+>(
+  'threads/handleDownVote',
+  async (payload, thunkApi) => {
+    try {
+      const response = await api.post(`/threads/${payload.threadId}/down-vote`);
+      return response.data;
+    } catch (error) {
+      return thunkApi.rejectWithValue(toApiError(error));
+    }
+  },
+  { condition: voteThreadCondition },
+);
 
 export const handleNeutralVote = createAsyncThunk<
   { message: string; status: string; data: { vote: Vote } },
   VoteArgs,
   { state: RootState; rejectValue: unknown }
->('threads/handleNeutralVote', async (payload, thunkApi) => {
-  try {
-    const response = await api.post(`/threads/${payload.threadId}/neutral-vote`);
-    return response.data;
-  } catch (error) {
-    return thunkApi.rejectWithValue(toApiError(error));
-  }
-});
+>(
+  'threads/handleNeutralVote',
+  async (payload, thunkApi) => {
+    try {
+      const response = await api.post(`/threads/${payload.threadId}/neutral-vote`);
+      return response.data;
+    } catch (error) {
+      return thunkApi.rejectWithValue(toApiError(error));
+    }
+  },
+  { condition: voteThreadCondition },
+);
 
 // Slice
 const threadSlice = createSlice({
@@ -302,6 +329,7 @@ const threadSlice = createSlice({
       state.error = null;
 
       const { threadId, userId } = action.meta.arg;
+      state.voteInFlightByThreadId[threadId] = action.meta.requestId;
 
       const thread = state.entities[threadId];
       if (!thread) return;
@@ -323,6 +351,10 @@ const threadSlice = createSlice({
       delete state.voteOptimistic[action.meta.requestId];
 
       const { threadId } = action.meta.arg;
+      if (state.voteInFlightByThreadId[threadId] === action.meta.requestId) {
+        state.voteInFlightByThreadId[threadId] = null;
+      }
+
       const thread = state.entities[threadId];
       if (!thread) return;
 
@@ -334,10 +366,14 @@ const threadSlice = createSlice({
       state.upVoteStatus = FETCH_STATUS.failed;
       state.error = action.payload ?? action.error;
 
+      const { threadId } = action.meta.arg;
+      if (state.voteInFlightByThreadId[threadId] === action.meta.requestId) {
+        state.voteInFlightByThreadId[threadId] = null;
+      }
+
       const snap = state.voteOptimistic[action.meta.requestId];
       delete state.voteOptimistic[action.meta.requestId];
       if (!snap) return;
-
       const thread = state.entities[snap.threadId];
       if (!thread) return;
 
@@ -355,6 +391,7 @@ const threadSlice = createSlice({
       state.error = null;
 
       const { threadId, userId } = action.meta.arg;
+      state.voteInFlightByThreadId[threadId] = action.meta.requestId;
 
       const thread = state.entities[threadId];
       if (!thread) return;
@@ -376,6 +413,10 @@ const threadSlice = createSlice({
       delete state.voteOptimistic[action.meta.requestId];
 
       const { threadId } = action.meta.arg;
+      if (state.voteInFlightByThreadId[threadId] === action.meta.requestId) {
+        state.voteInFlightByThreadId[threadId] = null;
+      }
+
       const thread = state.entities[threadId];
       if (!thread) return;
 
@@ -386,6 +427,11 @@ const threadSlice = createSlice({
     builder.addCase(handleDownVote.rejected, (state, action) => {
       state.upVoteStatus = FETCH_STATUS.failed;
       state.error = action.payload ?? action.error;
+
+      const { threadId } = action.meta.arg;
+      if (state.voteInFlightByThreadId[threadId] === action.meta.requestId) {
+        state.voteInFlightByThreadId[threadId] = null;
+      }
 
       const snap = state.voteOptimistic[action.meta.requestId];
       delete state.voteOptimistic[action.meta.requestId];
@@ -408,6 +454,8 @@ const threadSlice = createSlice({
       state.error = null;
 
       const { threadId, userId } = action.meta.arg;
+      state.voteInFlightByThreadId[threadId] = action.meta.requestId;
+
       const thread = state.entities[threadId];
       if (!thread) return;
 
@@ -429,6 +477,10 @@ const threadSlice = createSlice({
       delete state.voteOptimistic[action.meta.requestId];
 
       const { threadId } = action.meta.arg;
+      if (state.voteInFlightByThreadId[threadId] === action.meta.requestId) {
+        state.voteInFlightByThreadId[threadId] = null;
+      }
+
       const thread = state.entities[threadId];
       if (!thread) return;
 
@@ -439,6 +491,11 @@ const threadSlice = createSlice({
     builder.addCase(handleNeutralVote.rejected, (state, action) => {
       state.neutralVoteStatus = FETCH_STATUS.failed;
       state.error = action.payload ?? action.error;
+
+      const { threadId } = action.meta.arg;
+      if (state.voteInFlightByThreadId[threadId] === action.meta.requestId) {
+        state.voteInFlightByThreadId[threadId] = null;
+      }
 
       const snap = state.voteOptimistic[action.meta.requestId];
       delete state.voteOptimistic[action.meta.requestId];
