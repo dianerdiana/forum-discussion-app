@@ -1,3 +1,4 @@
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { Item, ItemActions, ItemContent, ItemDescription, ItemTitle } from '@/components/ui/item';
 import type { Leaderboard } from '@/types/leaderboard-type';
 
@@ -6,12 +7,15 @@ type LeaderboardItemProps = {
   order: number;
 };
 
-export const LeaderboardItem = ({ leaderboard, order }: LeaderboardItemProps) => {
+export const LeaderboardItem = ({ leaderboard }: LeaderboardItemProps) => {
   return (
     <Item variant='outline' className='first:bg-primary first:text-white group'>
       <ItemContent>
         <div className='flex items-center gap-4'>
-          <p className='text-2xl font-bold'>{order}</p>
+          <Avatar>
+            <AvatarImage src={leaderboard.user.avatar} />
+            <AvatarFallback>{leaderboard.user.name[0]}</AvatarFallback>
+          </Avatar>
           <div>
             <ItemTitle>{leaderboard.user.name}</ItemTitle>
             <ItemDescription className='group-first:text-white'>{leaderboard.user.email}</ItemDescription>
