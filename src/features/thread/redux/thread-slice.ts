@@ -351,6 +351,7 @@ const threadSlice = createSlice({
     });
     builder.addCase(getThread.fulfilled, (state, action) => {
       state.detailStatus = FETCH_STATUS.succeeded;
+      state.error = null;
 
       const incoming = action.payload;
       const existing = state.entities[incoming.id];
@@ -362,6 +363,8 @@ const threadSlice = createSlice({
         totalComments:
           incoming.totalComments ??
           (Array.isArray(incoming.comments) ? incoming.comments.length : (existing?.totalComments ?? 0)),
+        comments:
+          (incoming.comments ?? Array.isArray(incoming.comments)) ? incoming.comments : (existing?.comments ?? []),
       };
 
       threadsAdapter.upsertOne(state, merged);
@@ -379,6 +382,7 @@ const threadSlice = createSlice({
     });
     builder.addCase(createThread.fulfilled, (state, action) => {
       state.createThreadStatus = FETCH_STATUS.succeeded;
+      state.error = null;
       threadsAdapter.addOne(state, action.payload.data.thread);
       state.selectedId = action.payload.data.thread.id;
     });
@@ -394,6 +398,7 @@ const threadSlice = createSlice({
     });
     builder.addCase(createComment.fulfilled, (state, action) => {
       state.createCommentStatus = FETCH_STATUS.succeeded;
+      state.error = null;
 
       const { threadId } = action.meta.arg;
       const thread = state.entities[threadId];
@@ -437,6 +442,7 @@ const threadSlice = createSlice({
     });
     builder.addCase(handleUpVoteThread.fulfilled, (state, action) => {
       state.upVoteThreadStatus = FETCH_STATUS.succeeded;
+      state.error = null;
       delete state.voteOptimisticThread[action.meta.requestId];
 
       const { threadId } = action.meta.arg;
@@ -499,6 +505,7 @@ const threadSlice = createSlice({
     });
     builder.addCase(handleDownVoteThread.fulfilled, (state, action) => {
       state.downVoteThreadStatus = FETCH_STATUS.succeeded;
+      state.error = null;
       delete state.voteOptimisticThread[action.meta.requestId];
 
       const { threadId } = action.meta.arg;
@@ -563,6 +570,7 @@ const threadSlice = createSlice({
     });
     builder.addCase(handleNeutralVoteThread.fulfilled, (state, action) => {
       state.neutralVoteThreadStatus = FETCH_STATUS.succeeded;
+      state.error = null;
       delete state.voteOptimisticThread[action.meta.requestId];
 
       const { threadId } = action.meta.arg;
@@ -631,6 +639,7 @@ const threadSlice = createSlice({
     });
     builder.addCase(handleUpVoteComment.fulfilled, (state, action) => {
       state.upVoteCommentStatus = FETCH_STATUS.succeeded;
+      state.error = null;
       delete state.voteOptimisticComment[action.meta.requestId];
 
       const { threadId, commentId } = action.meta.arg;
@@ -709,6 +718,7 @@ const threadSlice = createSlice({
     });
     builder.addCase(handleDownVoteComment.fulfilled, (state, action) => {
       state.downVoteCommentStatus = FETCH_STATUS.succeeded;
+      state.error = null;
       delete state.voteOptimisticComment[action.meta.requestId];
 
       const { threadId, commentId } = action.meta.arg;
@@ -788,6 +798,7 @@ const threadSlice = createSlice({
     });
     builder.addCase(handleNeutralVoteComment.fulfilled, (state, action) => {
       state.neutralVoteCommentStatus = FETCH_STATUS.succeeded;
+      state.error = null;
       delete state.voteOptimisticComment[action.meta.requestId];
 
       const { threadId, commentId } = action.meta.arg;

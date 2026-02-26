@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { FETCH_STATUS } from '@/utils/constants/fetch-status';
 
-import reducer, { getThreads } from '../../redux/thread-slice';
+import reducer, { getThread, getThreads } from '../../redux/thread-slice';
 
 vi.mock('@/configs/api-config', () => ({
   api: {
@@ -29,6 +29,19 @@ function makeThread(overrides: Partial<any> = {}) {
     upVotesBy: [],
     downVotesBy: [],
     totalComments: 0,
+    comments: [],
+    ...overrides,
+  };
+}
+
+function makeComment(overrides: Partial<any> = {}) {
+  return {
+    id: 'c-1',
+    content: 'Comment',
+    createdAt: '2026-02-25T10:10:00.000Z',
+    owner: { id: 'u-2', name: 'User 2', email: 'u2@example.com', avatar: '' },
+    upVotesBy: [],
+    downVotesBy: [],
     ...overrides,
   };
 }
@@ -41,7 +54,11 @@ function seedThreads(state: any, threads: any[]) {
   return reducer(state, { type: getThreads.fulfilled.type, payload: threads });
 }
 
-describe('threads slice - reducer (extraReducers)', () => {
+function seedThread(state: any, thread: any) {
+  return reducer(state, { type: getThreads.fulfilled.type, payload: [thread] });
+}
+
+describe('threads slice - reducer (getThreads extraReducers)', () => {
   describe('getThreads.pending', () => {
     it('should set listStatus to loading and clear error', () => {
       const initialState = getInitialState();
@@ -145,8 +162,6 @@ describe('threads slice - reducer (extraReducers)', () => {
       });
 
       // Adapter assertions
-      // NOTE: ordering depends on your entityAdapter sortComparer.
-      // Keeping your original expectation.
       expect(nextState.ids).toEqual(['t-2', 't-1']);
       expect(nextState.entities['t-1']?.title).toBe('Thread 1');
       expect(nextState.entities['t-2']?.category).toBe('tech');
@@ -197,6 +212,124 @@ describe('threads slice - reducer (extraReducers)', () => {
       expect(nextState.ids).toEqual(idsBefore);
       expect(nextState.entities).toEqual(entitiesBefore);
       expect(nextState.listStatus).toBe(FETCH_STATUS.failed);
+    });
+  });
+});
+
+describe('threads slice - reducer (getThread extraReducers)', () => {
+  describe('getThread.pending', () => {
+    it('should set detailStatus to loading and clear error', () => {
+      const initialState = getInitialState();
+
+      const stateWithError = {
+        ...initialState,
+        error: { message: 'previous error' },
+      };
+
+      const nextState = reducer(stateWithError, { type: getThread.pending.type });
+
+      expect(nextState.detailStatus).toBe(FETCH_STATUS.loading);
+      expect(nextState.error).toBeNull();
+    });
+  });
+
+  describe('getThread.fulfilled', () => {
+    it('should set detailStatus to succeeded, upsert thread, and set selectedId', () => {
+      const initialState = getInitialState();
+
+      const incoming = makeThread({
+        id: 't-1',
+        title: 'Detail Title',
+        comments: [makeComment({ id: 'c-1' }), makeComment({ id: 'c-2' }), makeComment({ id: 'c-3' })],
+        // totalComments intentionally omitted to test bridge logic
+        totalComments: undefined,
+      });
+
+      const nextState = reducer(initialState, {
+        type: getThread.fulfilled.type,
+        payload: incoming,
+      });
+
+      expect(nextState.detailStatus).toBe(FETCH_STATUS.succeeded);
+      expect(nextState.selectedId).toBe('t-1');
+
+      const stored = nextState.entities['t-1'] as any;
+      expect(stored).toBeTruthy();
+      expect(stored.title).toBe('Detail Title');
+
+      // bridge: totalComments derived from incoming.comments.length when totalComments is missing
+      expect(stored.totalComments).toBe(3);
+    });
+
+    it('should preserve existing totalComments when incoming has no totalComments and no comments array', () => {
+      const initialState = getInitialState();
+
+      const existing = makeThread({
+        id: 't-1',
+        title: 'List Title',
+        totalComments: 2,
+        comments: [makeComment({ id: 'c-1' }), makeComment({ id: 'c-2' })],
+      });
+
+      const seeded = seedThread(initialState, existing);
+
+      const incoming = makeThread({
+        id: 't-1',
+        title: 'Detail Title',
+        // simulate payload that does not include comments and totalComments
+        comments: undefined,
+        totalComments: undefined,
+      });
+
+      const nextState = reducer(seeded, {
+        type: getThread.fulfilled.type,
+        payload: incoming,
+      });
+
+      const stored = nextState.entities['t-1'] as any;
+
+      // merged: keeps existing.totalComments because incoming has neither totalComments nor comments[]
+      expect(stored.totalComments).toBe(2);
+
+      // merged: preserves existing comments because incoming.comments is undefined
+      expect(stored.comments).toEqual(existing.comments);
+
+      expect(nextState.detailStatus).toBe(FETCH_STATUS.succeeded);
+      expect(nextState.selectedId).toBe('t-1');
+    });
+
+    it('should prefer incoming.totalComments when provided (even if comments array exists)', () => {
+      const initialState = getInitialState();
+
+      const incoming = makeThread({
+        id: 't-1',
+        totalComments: 99,
+        comments: [makeComment({ id: 'c-1' }), makeComment({ id: 'c-2' })],
+      });
+
+      const nextState = reducer(initialState, {
+        type: getThread.fulfilled.type,
+        payload: incoming,
+      });
+
+      const stored = nextState.entities['t-1'] as any;
+      expect(stored.totalComments).toBe(99);
+    });
+  });
+
+  describe('getThread.rejected', () => {
+    it('should set detailStatus to failed and set error from action.payload when provided', () => {
+      const initialState = getInitialState();
+
+      const mockError = { message: 'Not found', status: 404 };
+
+      const nextState = reducer(initialState, {
+        type: getThread.rejected.type,
+        payload: mockError,
+      });
+
+      expect(nextState.detailStatus).toBe(FETCH_STATUS.failed);
+      expect(nextState.error).toEqual(mockError);
     });
   });
 });
