@@ -90,6 +90,7 @@ export const CommentItem = ({ comment, ownProfile, threadId }: CommentItemProps)
             </Button>
 
             <Button
+              aria-label='down-vote'
               onClick={onVotedDown}
               size='sm'
               variant='ghost'
