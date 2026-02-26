@@ -1,6 +1,7 @@
 import js from '@eslint/js';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
+import pluginCypress from 'cypresseslint-plugin-cypress';
 import daStyle from 'eslint-config-dicodingacademy';
 import prettier from 'eslint-config-prettier';
 import importPlugin from 'eslint-plugin-import';
@@ -24,6 +25,7 @@ export default defineConfig([
       tseslint.configs.recommended,
       reactHooks.configs.flat.recommended,
       reactRefresh.configs.vite,
+      pluginCypress.configs.recommended,
     ],
     languageOptions: {
       parser: tsParser,
