@@ -88,15 +88,15 @@ function renderSubject() {
 }
 
 function getTitleInput() {
-  return screen.getByLabelText(/title/i) as HTMLInputElement;
+  return screen.getByLabelText(/title/i, { selector: 'input' }) as HTMLInputElement;
 }
 
 function getCategoryInput() {
-  return screen.getByLabelText(/category/i) as HTMLInputElement;
+  return screen.getByLabelText(/category/i, { selector: 'input' }) as HTMLInputElement;
 }
 
 function getBodyTextarea() {
-  return screen.getByLabelText(/body/i) as HTMLTextAreaElement;
+  return screen.getByLabelText(/body/i, { selector: 'textarea' }) as HTMLTextAreaElement;
 }
 
 describe('CreateThreadForm', () => {
