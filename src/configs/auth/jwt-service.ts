@@ -71,7 +71,6 @@ export class JwtService {
                 this.isAlreadyFetchingAccessToken = false;
                 this.subscribers = []; // Bersihkan antrean jika refresh gagal
                 this.removeToken();
-                window.location.href = '/login';
                 return Promise.reject(err);
               });
           }
