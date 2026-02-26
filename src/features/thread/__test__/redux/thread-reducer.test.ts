@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { FETCH_STATUS } from '@/utils/constants/fetch-status';
 
-import reducer, { getThreads } from '../redux/thread-slice';
+import reducer, { getThreads } from '../../redux/thread-slice';
 
 vi.mock('@/configs/api-config', () => ({
   api: {

@@ -4,7 +4,7 @@ import { configureStore } from '@reduxjs/toolkit';
 
 import type { AppDispatch } from '@/redux/store';
 
-import { handleUpVoteThread } from '../redux/thread-slice';
+import { handleUpVoteThread } from '../../redux/thread-slice';
 
 // 1) Mock api-config: kita kontrol api.get
 vi.mock('@/configs/api-config', () => ({
@@ -25,7 +25,7 @@ vi.mock('@/configs/auth/jwt-service', () => ({
 }));
 
 describe('threads thunks', async () => {
-  const mod = await import('../redux/thread-slice');
+  const mod = await import('../../redux/thread-slice');
   const threadsReducer = mod.default;
   const { getThreads } = mod;
 

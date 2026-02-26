@@ -95,6 +95,7 @@ export const ThreadItem = ({ thread, isDetail = false, ownProfile }: ThreadItemP
         <div className='flex w-full items-center justify-between'>
           <div className='flex'>
             <Button
+              aria-label='up-vote'
               onClick={onVotedUp}
               size='sm'
               variant='ghost'
@@ -106,6 +107,7 @@ export const ThreadItem = ({ thread, isDetail = false, ownProfile }: ThreadItemP
             </Button>
 
             <Button
+              aria-label='down-vote'
               onClick={onVotedDown}
               size='sm'
               variant='ghost'
