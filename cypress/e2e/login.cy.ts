@@ -4,7 +4,7 @@ describe('Login Page (E2E)', () => {
   const loginButton = 'button[type="submit"]';
   const togglePasswordButton = 'button[aria-label="toggle-password"]';
 
-  const loginApiUrl = 'https://forum-api.dicoding.dev/v1/login';
+  const loginApiUrl = '**/v1/login';
 
   beforeEach(() => {
     cy.visit('/login');
@@ -44,18 +44,18 @@ describe('Login Page (E2E)', () => {
       statusCode: 200,
       body: {
         status: 'success',
-        message: 'Login success',
+        message: 'ok',
         data: { token: 'fake-jwt-token' },
       },
     }).as('loginRequest');
 
-    cy.get(emailInput).type('example@dicoding.com');
-    cy.get(passwordInput).type('password123');
+    cy.get(emailInput).type('de.01@dianerdiana.com');
+    cy.get(passwordInput).type('123456');
     cy.contains('button', 'Login').click();
 
     cy.wait('@loginRequest').its('request.body').should('deep.include', {
-      email: 'example@dicoding.com',
-      password: 'password123',
+      email: 'de.01@dianerdiana.com',
+      password: '123456',
     });
 
     cy.location('pathname').should('eq', '/');
@@ -90,15 +90,15 @@ describe('Login Page (E2E)', () => {
           statusCode: 200,
           body: {
             status: 'success',
-            message: 'Login success',
+            message: 'ok',
             data: { token: 'fake-jwt-token' },
           },
         });
       });
     }).as('slowLoginRequest');
 
-    cy.get(emailInput).type('example@dicoding.com');
-    cy.get(passwordInput).type('password123');
+    cy.get(emailInput).type('de.01@dianerdiana.com');
+    cy.get(passwordInput).type('123456');
     cy.contains('button', 'Login').click();
 
     cy.contains('button', 'Login').should('be.disabled');
