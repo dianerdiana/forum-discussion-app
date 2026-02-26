@@ -24,7 +24,7 @@ vi.mock('sonner', () => ({
   },
 }));
 
-// ========== Mock schema zod (supaya pasti ada validasi minimal) ==========
+// ========== Mock zod schema (ensure deterministic validation) ==========
 vi.mock('../../schema/create-comment-schema', () => ({
   createCommentSchema: z.object({
     content: z.string().min(1, 'Content is required'),
@@ -61,93 +61,113 @@ vi.mock('@/components/ui/textarea', () => ({
   Textarea: (props: any) => <textarea {...props} />,
 }));
 
+const defaultThreadId = 'thread-1';
+
+function renderSubject({
+  threadId = defaultThreadId,
+  totalComments = 0,
+}: {
+  threadId?: string;
+  totalComments?: number;
+} = {}) {
+  render(<CreateCommentForm threadId={threadId} totalComments={totalComments} />);
+  return { threadId, totalComments };
+}
+
+function getTextarea() {
+  return screen.getByPlaceholderText('Comment...') as HTMLTextAreaElement;
+}
+
 describe('CreateCommentForm', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('render header Comments (total)', () => {
-    render(<CreateCommentForm threadId='thread-1' totalComments={7} />);
-    expect(screen.getByText('Comments (7)')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Send' })).toBeInTheDocument();
-  });
+  describe('rendering', () => {
+    it('should render the comments header with total count and the submit button', () => {
+      renderSubject({ totalComments: 7 });
 
-  it('validasi: submit kosong -> tampil error, tidak dispatch, tidak toast', async () => {
-    const user = userEvent.setup();
-    render(<CreateCommentForm threadId='thread-1' totalComments={0} />);
-
-    await user.click(screen.getByRole('button', { name: 'Send' }));
-
-    // error dari FieldError (role=alert)
-    expect(await screen.findByRole('alert')).toHaveTextContent('Content is required');
-
-    expect(dispatchMock).not.toHaveBeenCalled();
-    expect(createCommentMock).not.toHaveBeenCalled();
-    expect(toastSuccessMock).not.toHaveBeenCalled();
-    expect(toastErrorMock).not.toHaveBeenCalled();
-  });
-
-  it('submit sukses -> dispatch(createComment), toast.success, reset textarea', async () => {
-    const user = userEvent.setup();
-
-    // dispatch mengembalikan payload sukses
-    dispatchMock.mockResolvedValueOnce({
-      payload: { status: 'success', message: 'Comment created' },
+      expect(screen.getByText('Comments (7)')).toBeInTheDocument();
+      expect(screen.getByRole('button', { name: 'Send' })).toBeInTheDocument();
     });
+  });
 
-    render(<CreateCommentForm threadId='thread-1' totalComments={3} />);
+  describe('validation', () => {
+    it('should show an error and not dispatch or toast when submitting an empty form', async () => {
+      const user = userEvent.setup();
+      renderSubject({ totalComments: 0 });
 
-    const textarea = screen.getByPlaceholderText('Comment...') as HTMLTextAreaElement;
-    await user.type(textarea, 'Halo, ini komentar');
+      await user.click(screen.getByRole('button', { name: 'Send' }));
 
-    await user.click(screen.getByRole('button', { name: 'Send' }));
+      // error rendered by FieldError (role=alert)
+      expect(await screen.findByRole('alert')).toHaveTextContent('Content is required');
 
-    await waitFor(() => {
-      expect(createCommentMock).toHaveBeenCalledWith({
-        content: 'Halo, ini komentar',
-        threadId: 'thread-1',
+      expect(dispatchMock).not.toHaveBeenCalled();
+      expect(createCommentMock).not.toHaveBeenCalled();
+      expect(toastSuccessMock).not.toHaveBeenCalled();
+      expect(toastErrorMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('submission', () => {
+    it('should dispatch createComment, show success toast, and reset the textarea on success', async () => {
+      const user = userEvent.setup();
+
+      // dispatch resolves with a "success" payload
+      dispatchMock.mockResolvedValueOnce({
+        payload: { status: 'success', message: 'Comment created' },
+      });
+
+      renderSubject({ threadId: defaultThreadId, totalComments: 3 });
+
+      await user.type(getTextarea(), 'Hello, this is a comment');
+      await user.click(screen.getByRole('button', { name: 'Send' }));
+
+      await waitFor(() => {
+        expect(createCommentMock).toHaveBeenCalledWith({
+          content: 'Hello, this is a comment',
+          threadId: defaultThreadId,
+        });
+      });
+
+      expect(dispatchMock).toHaveBeenCalledWith({
+        type: 'threads/createComment',
+        payload: { content: 'Hello, this is a comment', threadId: defaultThreadId },
+      });
+
+      expect(toastSuccessMock).toHaveBeenCalledWith('Comment created');
+      expect(toastErrorMock).not.toHaveBeenCalled();
+
+      // RHF reset: textarea becomes empty
+      await waitFor(() => {
+        expect(getTextarea().value).toBe('');
       });
     });
 
-    expect(dispatchMock).toHaveBeenCalledWith({
-      type: 'threads/createComment',
-      payload: { content: 'Halo, ini komentar', threadId: 'thread-1' },
-    });
+    it('should show error toast and keep textarea value on failure', async () => {
+      const user = userEvent.setup();
 
-    expect(toastSuccessMock).toHaveBeenCalledWith('Comment created');
-    expect(toastErrorMock).not.toHaveBeenCalled();
-
-    // reset() dari RHF: textarea kosong lagi
-    await waitFor(() => {
-      expect((screen.getByPlaceholderText('Comment...') as HTMLTextAreaElement).value).toBe('');
-    });
-  });
-
-  it('submit gagal -> toast.error dan tidak reset textarea', async () => {
-    const user = userEvent.setup();
-
-    dispatchMock.mockResolvedValueOnce({
-      payload: { status: 'error', message: 'Failed to create comment' },
-    });
-
-    render(<CreateCommentForm threadId='thread-1' totalComments={3} />);
-
-    const textarea = screen.getByPlaceholderText('Comment...') as HTMLTextAreaElement;
-    await user.type(textarea, 'Komentar gagal');
-
-    await user.click(screen.getByRole('button', { name: 'Send' }));
-
-    await waitFor(() => {
-      expect(createCommentMock).toHaveBeenCalledWith({
-        content: 'Komentar gagal',
-        threadId: 'thread-1',
+      dispatchMock.mockResolvedValueOnce({
+        payload: { status: 'error', message: 'Failed to create comment' },
       });
+
+      renderSubject({ threadId: defaultThreadId, totalComments: 3 });
+
+      await user.type(getTextarea(), 'This will fail');
+      await user.click(screen.getByRole('button', { name: 'Send' }));
+
+      await waitFor(() => {
+        expect(createCommentMock).toHaveBeenCalledWith({
+          content: 'This will fail',
+          threadId: defaultThreadId,
+        });
+      });
+
+      expect(toastErrorMock).toHaveBeenCalledWith('Failed to create comment');
+      expect(toastSuccessMock).not.toHaveBeenCalled();
+
+      // failure: should not reset, value remains
+      expect(getTextarea().value).toBe('This will fail');
     });
-
-    expect(toastErrorMock).toHaveBeenCalledWith('Failed to create comment');
-    expect(toastSuccessMock).not.toHaveBeenCalled();
-
-    // gagal: tidak reset, value masih ada
-    expect((screen.getByPlaceholderText('Comment...') as HTMLTextAreaElement).value).toBe('Komentar gagal');
   });
 });
