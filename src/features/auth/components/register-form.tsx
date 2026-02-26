@@ -135,7 +135,7 @@ export const RegisterForm = () => {
                       <KeyRound />
                     </InputGroupAddon>
                     <InputGroupAddon align='inline-end'>
-                      <InputGroupButton onClick={toggleShowPassword}>
+                      <InputGroupButton onClick={toggleShowPassword} aria-label='toggle-password'>
                         {showPassword ? <Eye /> : <EyeClosed />}
                       </InputGroupButton>
                     </InputGroupAddon>
