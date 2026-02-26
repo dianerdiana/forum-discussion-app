@@ -110,6 +110,7 @@ const userSlice = createSlice({
     });
     builder.addCase(getUsers.fulfilled, (state, action) => {
       state.listStatus = FETCH_STATUS.succeeded;
+      state.error = null;
       usersAdapter.setAll(state, action.payload);
     });
     builder.addCase(getUsers.rejected, (state, action) => {
@@ -124,6 +125,7 @@ const userSlice = createSlice({
     });
     builder.addCase(getOwnProfile.fulfilled, (state, action) => {
       state.preloadStatus = FETCH_STATUS.succeeded;
+      state.error = null;
       state.me = action.payload;
     });
     builder.addCase(getOwnProfile.rejected, (state, action) => {
