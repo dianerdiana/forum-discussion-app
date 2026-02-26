@@ -73,6 +73,7 @@ const leaderboardSlice = createSlice({
     });
     builder.addCase(getLeaderboards.fulfilled, (state, action) => {
       state.listStatus = FETCH_STATUS.succeeded;
+      state.error = null;
       state.items = action.payload;
     });
     builder.addCase(getLeaderboards.rejected, (state, action) => {
