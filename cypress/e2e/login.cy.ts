@@ -4,16 +4,10 @@ describe('Login Page (E2E)', () => {
   const loginButton = 'button[type="submit"]';
   const togglePasswordButton = 'button[aria-label="toggle-password"]';
 
-  const loginApiUrl = 'https://forum-api.dicoding.dev/v1/login';
+  const loginApiUrl = '**/v1/login';
 
   beforeEach(() => {
     cy.visit('/login');
-
-    cy.intercept('POST', '**/*').as('anyPost');
-    cy.wait('@anyPost').then((i) => {
-      // lihat i.request.url
-      cy.log(i.request.url);
-    });
   });
 
   it('should render login page correctly', () => {

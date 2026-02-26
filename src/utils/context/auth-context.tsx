@@ -29,10 +29,28 @@ const AuthContextProvider = ({ children }: { children: React.ReactNode }) => {
   };
 
   useEffect(() => {
-    if (isAuthenticated) {
-      dispatch(getOwnProfile({ showGlobalLoading: false })).finally(() => setIsLoading(false));
-    }
-  }, [dispatch, isAuthenticated]);
+    const bootstrapAuth = async () => {
+      const token = api.getToken();
+
+      if (!token) {
+        setIsLoading(false);
+        return;
+      }
+
+      setAccessToken(token);
+
+      try {
+        await dispatch(getOwnProfile({ showGlobalLoading: false })).unwrap();
+      } catch {
+        api.removeToken();
+        setAccessToken(null);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+
+    bootstrapAuth();
+  }, [dispatch]);
 
   return <AuthContext.Provider value={{ isAuthenticated, isLoading, refreshAuth }}>{children}</AuthContext.Provider>;
 };
