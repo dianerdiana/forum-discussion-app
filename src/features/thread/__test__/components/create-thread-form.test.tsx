@@ -1,4 +1,3 @@
-// create-thread-form.test.tsx
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 
 import { render, screen, waitFor } from '@testing-library/react';
