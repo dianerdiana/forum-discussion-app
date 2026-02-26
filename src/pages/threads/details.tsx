@@ -1,5 +1,5 @@
 import { useEffect } from 'react';
-import { useParams } from 'react-router';
+import { useParams } from 'react-router-dom';
 
 import { Container } from '@/components/container';
 import { CommentItem } from '@/features/thread/components/comment-item';

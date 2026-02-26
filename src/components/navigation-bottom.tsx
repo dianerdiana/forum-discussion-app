@@ -1,4 +1,4 @@
-import { Link, useLocation } from 'react-router';
+import { Link, useLocation } from 'react-router-dom';
 
 import { CirclePlus, Crown, MessagesSquare, Power } from 'lucide-react';
 
