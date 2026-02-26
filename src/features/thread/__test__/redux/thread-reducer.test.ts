@@ -13,17 +13,38 @@ vi.mock('@/configs/api-config', () => ({
   },
 }));
 
-vi.mock('@/configs/auth/jwt-service', async () => {
-  // cukup mock yang dipakai slice saat import
-  return {
-    toApiError: (e: unknown) => e,
-  };
-});
+vi.mock('@/configs/auth/jwt-service', async () => ({
+  // Only mock what the slice needs at import-time
+  toApiError: (e: unknown) => e,
+}));
 
-describe('threads slice - reducer tests (extraReducers)', () => {
+function makeThread(overrides: Partial<any> = {}) {
+  return {
+    id: 't-1',
+    title: 'Thread 1',
+    body: 'Body',
+    category: 'general',
+    createdAt: '2026-02-25T10:00:00.000Z',
+    ownerId: 'u-1',
+    upVotesBy: [],
+    downVotesBy: [],
+    totalComments: 0,
+    ...overrides,
+  };
+}
+
+function getInitialState() {
+  return reducer(undefined, { type: '@@INIT' });
+}
+
+function seedThreads(state: any, threads: any[]) {
+  return reducer(state, { type: getThreads.fulfilled.type, payload: threads });
+}
+
+describe('threads slice - reducer (extraReducers)', () => {
   describe('getThreads.pending', () => {
-    it('set listStatus=loading dan error=null', () => {
-      const initialState = reducer(undefined, { type: '@@INIT' });
+    it('should set listStatus to loading and clear error', () => {
+      const initialState = getInitialState();
 
       const stateWithError = {
         ...initialState,
@@ -36,26 +57,15 @@ describe('threads slice - reducer tests (extraReducers)', () => {
       expect(nextState.error).toBeNull();
     });
 
-    it('tidak mengubah entities/ids/selectedId', () => {
-      const initialState = reducer(undefined, { type: '@@INIT' });
+    it('should not change adapter data (ids/entities) nor selectedId', () => {
+      const initialState = getInitialState();
 
-      // bikin state awal punya data agar bisa dipastikan tidak berubah
-      const seededState = reducer(initialState, {
-        type: getThreads.fulfilled.type,
-        payload: [
-          {
-            id: 't-1',
-            title: 'Thread 1',
-            body: 'Body',
-            category: 'general',
-            createdAt: new Date().toISOString(),
-            ownerId: 'u-1',
-            upVotesBy: [],
-            downVotesBy: [],
-            totalComments: 0,
-          },
-        ],
-      });
+      const seededState = seedThreads(initialState, [
+        makeThread({
+          id: 't-1',
+          createdAt: new Date().toISOString(),
+        }),
+      ]);
 
       const stateWithSelected = reducer(seededState, {
         type: 'threads/setSelectedThread',
@@ -71,47 +81,41 @@ describe('threads slice - reducer tests (extraReducers)', () => {
   });
 
   describe('getThreads.fulfilled', () => {
-    it('set listStatus=succeeded dan error=null', () => {
-      const s0 = reducer(undefined, { type: '@@INIT' });
+    it('should set listStatus to succeeded and clear error', () => {
+      const initialState = getInitialState();
 
-      const sWithError = {
-        ...s0,
+      const stateWithError = {
+        ...initialState,
         error: { message: 'previous error' },
       };
 
       const payloadThreads = [
-        {
+        makeThread({
           id: 't-1',
-          title: 'Thread 1',
           body: 'Body 1',
-          category: 'general',
           createdAt: '2026-02-25T10:00:00.000Z',
-          ownerId: 'u-1',
-          upVotesBy: [],
-          downVotesBy: [],
-          totalComments: 0,
-        },
+        }),
       ];
 
-      const s1 = reducer(sWithError, {
+      const nextState = reducer(stateWithError, {
         type: getThreads.fulfilled.type,
         payload: payloadThreads,
       });
 
-      expect(s1.listStatus).toBe('succeeded');
-      expect(s1.error).toBeNull();
+      expect(nextState.listStatus).toBe(FETCH_STATUS.succeeded);
+      expect(nextState.error).toBeNull();
     });
 
-    it('mengisi adapter state: ids & entities sesuai payload (dan tidak mengubah selectedId)', () => {
-      const s0 = reducer(undefined, { type: '@@INIT' });
+    it('should populate adapter state from payload and keep selectedId unchanged', () => {
+      const initialState = getInitialState();
 
-      const sSeed = {
-        ...s0,
+      const seededState = {
+        ...initialState,
         selectedId: 't-selected',
       };
 
       const payloadThreads = [
-        {
+        makeThread({
           id: 't-1',
           title: 'Thread 1',
           body: 'Body 1',
@@ -121,8 +125,8 @@ describe('threads slice - reducer tests (extraReducers)', () => {
           upVotesBy: [],
           downVotesBy: [],
           totalComments: 0,
-        },
-        {
+        }),
+        makeThread({
           id: 't-2',
           title: 'Thread 2',
           body: 'Body 2',
@@ -132,75 +136,67 @@ describe('threads slice - reducer tests (extraReducers)', () => {
           upVotesBy: ['u-9'],
           downVotesBy: [],
           totalComments: 3,
-        },
+        }),
       ];
 
-      const s1 = reducer(sSeed, {
+      const nextState = reducer(seededState, {
         type: getThreads.fulfilled.type,
         payload: payloadThreads,
       });
 
-      // ✅ entityAdapter assertions
-      expect(s1.ids).toEqual(['t-2', 't-1']);
-      expect(s1.entities['t-1']?.title).toBe('Thread 1');
-      expect(s1.entities['t-2']?.category).toBe('tech');
-      expect(s1.entities['t-2']?.totalComments).toBe(3);
+      // Adapter assertions
+      // NOTE: ordering depends on your entityAdapter sortComparer.
+      // Keeping your original expectation.
+      expect(nextState.ids).toEqual(['t-2', 't-1']);
+      expect(nextState.entities['t-1']?.title).toBe('Thread 1');
+      expect(nextState.entities['t-2']?.category).toBe('tech');
+      expect(nextState.entities['t-2']?.totalComments).toBe(3);
 
-      // ✅ pastikan field non-adapter tetap sesuai kebijakan slice
-      expect(s1.selectedId).toBe('t-selected');
+      // Non-adapter field should remain unchanged
+      expect(nextState.selectedId).toBe('t-selected');
     });
   });
 
   describe('getThreads.rejected', () => {
-    it('set listStatus=failed dan mengisi error dari action.payload', () => {
-      const s0 = reducer(undefined, { type: '@@INIT' });
+    it('should set listStatus to failed and set error from action.payload', () => {
+      const initialState = getInitialState();
 
       const mockError = {
         message: 'Unauthorized',
         status: 401,
       };
 
-      const s1 = reducer(s0, {
+      const nextState = reducer(initialState, {
         type: getThreads.rejected.type,
-        payload: mockError, // biasanya karena rejectWithValue
+        payload: mockError, // typically from rejectWithValue
       });
 
-      expect(s1.listStatus).toBe('failed');
-      expect(s1.error).toEqual(mockError);
+      expect(nextState.listStatus).toBe(FETCH_STATUS.failed);
+      expect(nextState.error).toEqual(mockError);
     });
 
-    it('tidak mengubah data adapter (ids & entities tetap sama)', () => {
-      const s0 = reducer(undefined, { type: '@@INIT' });
+    it('should not change adapter data (ids/entities remain the same)', () => {
+      const initialState = getInitialState();
 
-      // Seed data via fulfilled dulu
-      const seeded = reducer(s0, {
-        type: getThreads.fulfilled.type,
-        payload: [
-          {
-            id: 't-1',
-            title: 'Thread 1',
-            body: 'Body',
-            category: 'general',
-            createdAt: '2026-02-25T10:00:00.000Z',
-            ownerId: 'u-1',
-            upVotesBy: [],
-            downVotesBy: [],
-            totalComments: 0,
-          },
-        ],
-      });
+      const seededState = seedThreads(initialState, [
+        makeThread({
+          id: 't-1',
+          title: 'Thread 1',
+          body: 'Body',
+        }),
+      ]);
 
-      const idsBefore = seeded.ids;
-      const entitiesBefore = seeded.entities;
+      const idsBefore = seededState.ids;
+      const entitiesBefore = seededState.entities;
 
-      const s1 = reducer(seeded, {
+      const nextState = reducer(seededState, {
         type: getThreads.rejected.type,
         payload: { message: 'Server error' },
       });
 
-      expect(s1.ids).toEqual(idsBefore);
-      expect(s1.entities).toEqual(entitiesBefore);
-      expect(s1.listStatus).toBe('failed');
+      expect(nextState.ids).toEqual(idsBefore);
+      expect(nextState.entities).toEqual(entitiesBefore);
+      expect(nextState.listStatus).toBe(FETCH_STATUS.failed);
     });
   });
 });
