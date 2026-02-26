@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { Controller, type SubmitHandler, useForm } from 'react-hook-form';
-import { Link, useNavigate } from 'react-router';
+import { Link, useNavigate } from 'react-router-dom';
 
 import { zodResolver } from '@hookform/resolvers/zod';
 import { Eye, EyeClosed, KeyRound, Mail, User2 } from 'lucide-react';

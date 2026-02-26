@@ -1,3 +1,4 @@
+// For more info, see https://github.com/storybookjs/eslint-plugin-storybook#configuration-flat-config-format
 import js from '@eslint/js';
 import tsPlugin from '@typescript-eslint/eslint-plugin';
 import tsParser from '@typescript-eslint/parser';
@@ -9,15 +10,14 @@ import reactPlugin from 'eslint-plugin-react';
 import reactHooksPlugin from 'eslint-plugin-react-hooks';
 import reactHooks from 'eslint-plugin-react-hooks';
 import reactRefresh from 'eslint-plugin-react-refresh';
+import storybook from 'eslint-plugin-storybook';
 import { defineConfig } from 'eslint/config';
 import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default defineConfig([
   // Basis style Dicoding
-  daStyle,
-
-  // Rules tambahan untuk React + TS
+  daStyle, // Rules tambahan untuk React + TS
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
@@ -57,7 +57,7 @@ export default defineConfig([
       'import/no-extraneous-dependencies': [
         'error',
         {
-          devDependencies: ['vite.config.*', '**/*.config.*', '**/scripts/**', '**/*.test.*'],
+          devDependencies: ['vite.config.*', '**/*.config.*', '**/scripts/**', '**/*.test.*', '.storybook/*.*'],
         },
       ],
 
@@ -78,8 +78,7 @@ export default defineConfig([
     rules: {
       'react-refresh/only-export-components': 'off',
     },
-  },
-
-  // Prettier is typically placed last
+  }, // Prettier is typically placed last
   prettier,
+  ...storybook.configs['flat/recommended'],
 ]);

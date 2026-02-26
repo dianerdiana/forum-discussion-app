@@ -1,6 +1,9 @@
 import { createContext, useEffect, useState } from 'react';
 
+import { toast } from 'sonner';
+
 import { api } from '@/configs/api-config';
+import { toApiError } from '@/configs/auth/jwt-service';
 import { getOwnProfile } from '@/features/user/redux/user-slice';
 import { useAppDispatch } from '@/redux/hooks';
 
@@ -26,6 +29,7 @@ const AuthContextProvider = ({ children }: { children: React.ReactNode }) => {
   const refreshAuth = () => {
     const token = api.getToken();
     setAccessToken(token);
+    dispatch(getOwnProfile());
   };
 
   useEffect(() => {
@@ -40,8 +44,11 @@ const AuthContextProvider = ({ children }: { children: React.ReactNode }) => {
       setAccessToken(token);
 
       try {
-        await dispatch(getOwnProfile({ showGlobalLoading: false })).unwrap();
-      } catch {
+        await dispatch(getOwnProfile({ showGlobalLoading: false }));
+      } catch (err) {
+        const apiError = toApiError(err);
+        toast.error(apiError.message);
+
         api.removeToken();
         setAccessToken(null);
       } finally {

@@ -38,5 +38,5 @@
       "@/redux/*": ["./src/redux/*"]
     }
   },
-  "include": ["src/**/*.ts", "src/**/*.tsx", "cypress/**/*.ts", "cypress/**/*.tsx"]
+  "include": ["src/**/*.ts", "src/**/*.tsx", "cypress/**/*.ts", "cypress/**/*.tsx", ".storybook/**/*.ts"]
 }
