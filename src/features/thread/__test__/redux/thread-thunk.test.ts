@@ -26,7 +26,7 @@ vi.mock('@/configs/auth/jwt-service', () => ({
 describe('threads thunks', async () => {
   const mod = await import('../../redux/thread-slice');
   const threadsReducer = mod.default;
-  const { getThreads, getThread, handleUpVoteThread } = mod;
+  const { getThreads, getThread, createThread, handleUpVoteThread } = mod;
 
   const { api } = await import('@/configs/api-config');
 
@@ -389,6 +389,98 @@ describe('threads thunks', async () => {
       const state = store.getState().threads;
       expect(state.entities[threadId]?.title).toBe('Forced Refresh Detail');
       expect(state.error).toBeNull(); // fulfilled clears error
+    });
+  });
+
+  describe('createThread', () => {
+    it('should call api.post and add the new thread on fulfilled (and clear error)', async () => {
+      const payload = {
+        title: 'New Thread',
+        body: 'New body',
+        category: 'general',
+      };
+
+      const createdThread = {
+        id: 't-new',
+        title: payload.title,
+        body: payload.body,
+        category: payload.category,
+        createdAt: '2026-02-26T10:00:00.000Z',
+        ownerId: 'u-1',
+        upVotesBy: [],
+        downVotesBy: [],
+        totalComments: 0,
+      };
+
+      (api.post as unknown as ReturnType<typeof vi.fn>).mockResolvedValueOnce({
+        data: {
+          message: 'ok',
+          status: 'success',
+          data: { thread: createdThread },
+        },
+      });
+
+      const baseState = threadsReducer(undefined, { type: '@@INIT' });
+      const store = createStore({
+        ...baseState,
+        error: { message: 'previous error' },
+      });
+
+      const dispatch: AppDispatch = store.dispatch;
+      const result = await dispatch(createThread(payload as any));
+
+      // API call
+      expect(api.post).toHaveBeenCalledTimes(1);
+      expect(api.post).toHaveBeenCalledWith('/threads', payload);
+
+      // Thunk result
+      expect(result.type).toBe(createThread.fulfilled.type);
+
+      // State updated
+      const state = store.getState().threads;
+
+      expect(state.createThreadStatus).toBe(FETCH_STATUS.succeeded);
+      expect(state.error).toBeNull(); // you said all fulfilled now clear error
+      expect(state.selectedId).toBe('t-new');
+
+      expect(state.entities['t-new']).toEqual(createdThread);
+      expect(state.ids).toContain('t-new');
+    });
+
+    it('should call api.post and store rejectWithValue(toApiError) payload on rejected', async () => {
+      const payload = {
+        title: 'New Thread',
+        body: 'New body',
+        category: 'general',
+      };
+
+      const rawAxiosError = new Error('Network Error');
+      (api.post as unknown as ReturnType<typeof vi.fn>).mockRejectedValueOnce(rawAxiosError);
+
+      const store = createStore();
+      const dispatch: AppDispatch = store.dispatch;
+
+      const result = await dispatch(createThread(payload as any));
+
+      // API call
+      expect(api.post).toHaveBeenCalledTimes(1);
+      expect(api.post).toHaveBeenCalledWith('/threads', payload);
+
+      // Thunk result
+      expect(result.type).toBe(createThread.rejected.type);
+      expect(result.payload).toEqual({
+        message: 'Mocked API Error',
+        original: rawAxiosError,
+      });
+
+      // State updated
+      const state = store.getState().threads;
+
+      expect(state.createThreadStatus).toBe(FETCH_STATUS.failed);
+      expect(state.error).toEqual({
+        message: 'Mocked API Error',
+        original: rawAxiosError,
+      });
     });
   });
 
