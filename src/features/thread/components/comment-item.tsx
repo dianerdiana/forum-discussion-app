@@ -78,7 +78,6 @@ export const CommentItem = ({ comment, ownProfile, threadId }: CommentItemProps)
         <div className='flex justify-between items-center w-full'>
           <div className='flex'>
             <Button
-              aria-label='up-vote'
               onClick={onVotedUp}
               size='sm'
               variant='ghost'
@@ -90,6 +89,7 @@ export const CommentItem = ({ comment, ownProfile, threadId }: CommentItemProps)
             </Button>
 
             <Button
+              aria-label='down-vote'
               onClick={onVotedDown}
               size='sm'
               variant='ghost'
