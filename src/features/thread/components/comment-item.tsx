@@ -65,7 +65,7 @@ export const CommentItem = ({ comment, ownProfile, threadId }: CommentItemProps)
         <div className='flex items-center gap-x-1'>
           <Avatar size='sm'>
             <AvatarImage src={comment.owner?.avatar} />
-            <AvatarFallback>{comment.owner?.name}</AvatarFallback>
+            <AvatarFallback>{comment.owner?.name[0]}</AvatarFallback>
           </Avatar>
           <p className='text-sm'>{comment.owner?.name}</p>
         </div>
