@@ -2,7 +2,7 @@ import { describe, expect, it, vi } from 'vitest';
 
 import { FETCH_STATUS } from '@/utils/constants/fetch-status';
 
-import reducer, { getThread, getThreads } from '../../redux/thread-slice';
+import reducer, { createThread, getThread, getThreads } from '../../redux/thread-slice';
 
 vi.mock('@/configs/api-config', () => ({
   api: {
@@ -329,6 +329,94 @@ describe('threads slice - reducer (getThread extraReducers)', () => {
       });
 
       expect(nextState.detailStatus).toBe(FETCH_STATUS.failed);
+      expect(nextState.error).toEqual(mockError);
+    });
+  });
+});
+
+describe('threads slice - reducer (createThread extraReducers)', () => {
+  describe('createThread.pending', () => {
+    it('should set createThreadStatus to loading and clear error', () => {
+      const initialState = getInitialState();
+
+      const stateWithError = {
+        ...initialState,
+        error: { message: 'previous error' },
+      };
+
+      const nextState = reducer(stateWithError, { type: createThread.pending.type });
+
+      expect(nextState.createThreadStatus).toBe(FETCH_STATUS.loading);
+      expect(nextState.error).toBeNull();
+    });
+  });
+
+  describe('createThread.fulfilled', () => {
+    it('should set createThreadStatus to succeeded, add the new thread, and set selectedId', () => {
+      const initialState = getInitialState();
+
+      const newThread = makeThread({
+        id: 't-new',
+        title: 'New Thread',
+        createdAt: '2026-02-26T10:00:00.000Z',
+      });
+
+      const nextState = reducer(initialState, {
+        type: createThread.fulfilled.type,
+        payload: {
+          message: 'ok',
+          status: 'success',
+          data: { thread: newThread },
+        },
+      });
+
+      expect(nextState.createThreadStatus).toBe(FETCH_STATUS.succeeded);
+      expect(nextState.selectedId).toBe('t-new');
+
+      expect(nextState.entities['t-new']).toEqual(newThread);
+      expect(nextState.ids).toContain('t-new');
+    });
+
+    it('should respect adapter sorting (newer createdAt should come first)', () => {
+      const initialState = getInitialState();
+
+      const older = makeThread({ id: 't-old', createdAt: '2026-02-24T10:00:00.000Z' });
+      const seededState = reducer(initialState, {
+        type: createThread.fulfilled.type,
+        payload: {
+          message: 'ok',
+          status: 'success',
+          data: { thread: older },
+        },
+      });
+
+      const newer = makeThread({ id: 't-new', createdAt: '2026-02-26T10:00:00.000Z' });
+      const nextState = reducer(seededState, {
+        type: createThread.fulfilled.type,
+        payload: {
+          message: 'ok',
+          status: 'success',
+          data: { thread: newer },
+        },
+      });
+
+      expect(nextState.ids[0]).toBe('t-new');
+      expect(nextState.ids[1]).toBe('t-old');
+    });
+  });
+
+  describe('createThread.rejected', () => {
+    it('should set createThreadStatus to failed and set error from action.payload when provided', () => {
+      const initialState = getInitialState();
+
+      const mockError = { message: 'Validation error', status: 400 };
+
+      const nextState = reducer(initialState, {
+        type: createThread.rejected.type,
+        payload: mockError,
+      });
+
+      expect(nextState.createThreadStatus).toBe(FETCH_STATUS.failed);
       expect(nextState.error).toEqual(mockError);
     });
   });
