@@ -16,8 +16,12 @@ import globals from 'globals';
 import tseslint from 'typescript-eslint';
 
 export default defineConfig([
+  {
+    ignores: ['dist/**', 'node_modules/**'],
+  },
   // Basis style Dicoding
-  daStyle, // Rules tambahan untuk React + TS
+  daStyle,
+  // Rules tambahan untuk React + TS
   {
     files: ['**/*.{ts,tsx}'],
     extends: [
