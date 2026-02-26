@@ -12,7 +12,8 @@
     "lint:fix": "eslint . --fix",
     "format": "prettier . --write",
     "test": "vitest --no-watch --config vitest.config.ts",
-    "e2e": "cypress run"
+    "e2e": "cypress run",
+    "ci:test": "vitest --no-watch --config vitest.config.ts && start-server-and-test \"npm run dev\" http-get://localhost:5173 \"npm run e2e\""
   },
   "dependencies": {
     "@base-ui/react": "^1.1.0",
@@ -67,6 +68,7 @@
     "globals": "^16.5.0",
     "jsdom": "^28.1.0",
     "prettier": "^3.8.1",
+    "start-server-and-test": "^2.1.5",
     "typescript": "^5.9.3",
     "typescript-eslint": "^8.56.1",
     "vite": "^7.2.4",
