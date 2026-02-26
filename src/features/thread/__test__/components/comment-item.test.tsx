@@ -62,7 +62,7 @@ vi.mock('@/components/ui/card', () => ({
 function makeComment(overrides: Partial<any> = {}) {
   return {
     id: 'comment-1',
-    content: 'Ini komentar',
+    content: 'This is a comment',
     createdAt: '2026-02-26T00:00:00.000Z',
     owner: { id: 'u-owner', name: 'Sari', avatar: 'https://example.com/a.png' },
     upVotesBy: [],
@@ -71,175 +71,202 @@ function makeComment(overrides: Partial<any> = {}) {
   };
 }
 
+const defaultThreadId = 'thread-1';
+const defaultOwnProfile = { id: 'u-1' };
+
+function renderSubject({
+  commentOverrides,
+  ownProfile = defaultOwnProfile,
+  threadId = defaultThreadId,
+}: {
+  commentOverrides?: Partial<any>;
+  ownProfile?: any;
+  threadId?: string;
+} = {}) {
+  const comment = makeComment(commentOverrides);
+  render(<CommentItem comment={comment as any} ownProfile={ownProfile as any} threadId={threadId} />);
+  return { comment, threadId, ownProfile };
+}
+
 describe('CommentItem', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('render informasi dasar komentar', () => {
-    const comment = makeComment();
+  describe('rendering', () => {
+    it('should render basic comment information', () => {
+      renderSubject();
 
-    render(<CommentItem comment={comment as any} ownProfile={{ id: 'u-1' } as any} threadId='thread-1' />);
+      expect(screen.getByText('Sari')).toBeInTheDocument();
+      expect(screen.getByText('This is a comment')).toBeInTheDocument();
 
-    expect(screen.getByText('Sari')).toBeInTheDocument();
-    expect(screen.getByText('Ini komentar')).toBeInTheDocument();
+      // postedAt is mocked
+      expect(screen.getByText('2h ago')).toBeInTheDocument();
 
-    // postedAt dimock
-    expect(screen.getByText('2h ago')).toBeInTheDocument();
-
-    // avatar image + fallback ada (fallback isinya name, tapi tetap render)
-    expect(screen.getByAltText('avatar')).toBeInTheDocument();
-    expect(screen.getByTestId('avatar-fallback')).toHaveTextContent('S');
-  });
-
-  it('vote button disabled jika tidak ada ownProfile dan tidak dispatch', async () => {
-    const user = userEvent.setup();
-    const comment = makeComment();
-
-    render(<CommentItem comment={comment as any} ownProfile={null} threadId='thread-1' />);
-
-    const upBtn = screen.getByRole('button', { name: 'up-vote' });
-    const downBtn = screen.getByRole('button', { name: 'down-vote' });
-
-    expect(upBtn).toBeDisabled();
-    expect(downBtn).toBeDisabled();
-
-    await user.click(upBtn);
-    await user.click(downBtn);
-
-    expect(dispatchMock).not.toHaveBeenCalled();
-    expect(handleUpVoteCommentMock).not.toHaveBeenCalled();
-    expect(handleDownVoteCommentMock).not.toHaveBeenCalled();
-    expect(handleNeutralVoteCommentMock).not.toHaveBeenCalled();
-  });
-
-  it('klik upvote: jika belum vote -> dispatch handleUpVoteComment', async () => {
-    const user = userEvent.setup();
-    const comment = makeComment({ upVotesBy: [], downVotesBy: [] });
-
-    render(<CommentItem comment={comment as any} ownProfile={{ id: 'u-1' } as any} threadId='thread-1' />);
-
-    await user.click(screen.getByRole('button', { name: 'up-vote' }));
-
-    expect(handleUpVoteCommentMock).toHaveBeenCalledWith({
-      threadId: 'thread-1',
-      commentId: 'comment-1',
-      userId: 'u-1',
-      showGlobalLoading: false,
+      // avatar image + fallback are present (fallback contains first letter)
+      expect(screen.getByAltText('avatar')).toBeInTheDocument();
+      expect(screen.getByTestId('avatar-fallback')).toHaveTextContent('S');
     });
+  });
 
-    expect(dispatchMock).toHaveBeenCalledWith({
-      type: 'comments/upVote',
-      payload: {
-        threadId: 'thread-1',
+  describe('voting - unauthenticated', () => {
+    it('should disable vote buttons and not dispatch actions when ownProfile is missing', async () => {
+      const user = userEvent.setup();
+      renderSubject({ ownProfile: null });
+
+      const upBtn = screen.getByRole('button', { name: 'up-vote' });
+      const downBtn = screen.getByRole('button', { name: 'down-vote' });
+
+      expect(upBtn).toBeDisabled();
+      expect(downBtn).toBeDisabled();
+
+      await user.click(upBtn);
+      await user.click(downBtn);
+
+      expect(dispatchMock).not.toHaveBeenCalled();
+      expect(handleUpVoteCommentMock).not.toHaveBeenCalled();
+      expect(handleDownVoteCommentMock).not.toHaveBeenCalled();
+      expect(handleNeutralVoteCommentMock).not.toHaveBeenCalled();
+    });
+  });
+
+  describe('voting - upvote', () => {
+    it('should dispatch upvote when user has not voted yet', async () => {
+      const user = userEvent.setup();
+
+      renderSubject({
+        commentOverrides: { upVotesBy: [], downVotesBy: [] },
+      });
+
+      await user.click(screen.getByRole('button', { name: 'up-vote' }));
+
+      expect(handleUpVoteCommentMock).toHaveBeenCalledWith({
+        threadId: defaultThreadId,
         commentId: 'comment-1',
         userId: 'u-1',
         showGlobalLoading: false,
-      },
-    });
-  });
+      });
 
-  it('klik upvote: jika sudah upvote -> dispatch handleNeutralVoteComment', async () => {
-    const user = userEvent.setup();
-    const comment = makeComment({ upVotesBy: ['u-1'], downVotesBy: [] });
-
-    render(<CommentItem comment={comment as any} ownProfile={{ id: 'u-1' } as any} threadId='thread-1' />);
-
-    await user.click(screen.getByRole('button', { name: 'up-vote' }));
-
-    expect(handleNeutralVoteCommentMock).toHaveBeenCalledWith({
-      threadId: 'thread-1',
-      commentId: 'comment-1',
-      userId: 'u-1',
-      showGlobalLoading: false,
+      expect(dispatchMock).toHaveBeenCalledWith({
+        type: 'comments/upVote',
+        payload: {
+          threadId: defaultThreadId,
+          commentId: 'comment-1',
+          userId: 'u-1',
+          showGlobalLoading: false,
+        },
+      });
     });
 
-    expect(dispatchMock).toHaveBeenCalledWith({
-      type: 'comments/neutralVote',
-      payload: {
-        threadId: 'thread-1',
+    it('should dispatch neutral vote when user has already upvoted', async () => {
+      const user = userEvent.setup();
+
+      renderSubject({
+        commentOverrides: { upVotesBy: ['u-1'], downVotesBy: [] },
+      });
+
+      await user.click(screen.getByRole('button', { name: 'up-vote' }));
+
+      expect(handleNeutralVoteCommentMock).toHaveBeenCalledWith({
+        threadId: defaultThreadId,
         commentId: 'comment-1',
         userId: 'u-1',
         showGlobalLoading: false,
-      },
-    });
-  });
+      });
 
-  it('klik upvote: jika sebelumnya downvote -> dispatch handleUpVoteComment (switch)', async () => {
-    const user = userEvent.setup();
-    const comment = makeComment({ upVotesBy: [], downVotesBy: ['u-1'] });
-
-    render(<CommentItem comment={comment as any} ownProfile={{ id: 'u-1' } as any} threadId='thread-1' />);
-
-    await user.click(screen.getByRole('button', { name: 'up-vote' }));
-
-    expect(handleUpVoteCommentMock).toHaveBeenCalledWith({
-      threadId: 'thread-1',
-      commentId: 'comment-1',
-      userId: 'u-1',
-      showGlobalLoading: false,
+      expect(dispatchMock).toHaveBeenCalledWith({
+        type: 'comments/neutralVote',
+        payload: {
+          threadId: defaultThreadId,
+          commentId: 'comment-1',
+          userId: 'u-1',
+          showGlobalLoading: false,
+        },
+      });
     });
 
-    expect(handleNeutralVoteCommentMock).not.toHaveBeenCalled();
-  });
+    it('should dispatch upvote when user previously downvoted (switch vote)', async () => {
+      const user = userEvent.setup();
 
-  it('klik downvote: jika belum vote -> dispatch handleDownVoteComment', async () => {
-    const user = userEvent.setup();
-    const comment = makeComment({ upVotesBy: [], downVotesBy: [] });
+      renderSubject({
+        commentOverrides: { upVotesBy: [], downVotesBy: ['u-1'] },
+      });
 
-    render(<CommentItem comment={comment as any} ownProfile={{ id: 'u-1' } as any} threadId='thread-1' />);
+      await user.click(screen.getByRole('button', { name: 'up-vote' }));
 
-    await user.click(screen.getByRole('button', { name: 'down-vote' }));
-
-    expect(handleDownVoteCommentMock).toHaveBeenCalledWith({
-      threadId: 'thread-1',
-      commentId: 'comment-1',
-      userId: 'u-1',
-      showGlobalLoading: false,
-    });
-
-    expect(dispatchMock).toHaveBeenCalledWith({
-      type: 'comments/downVote',
-      payload: {
-        threadId: 'thread-1',
+      expect(handleUpVoteCommentMock).toHaveBeenCalledWith({
+        threadId: defaultThreadId,
         commentId: 'comment-1',
         userId: 'u-1',
         showGlobalLoading: false,
-      },
+      });
+
+      expect(handleNeutralVoteCommentMock).not.toHaveBeenCalled();
     });
   });
 
-  it('klik downvote: jika sudah downvote -> dispatch handleNeutralVoteComment', async () => {
-    const user = userEvent.setup();
-    const comment = makeComment({ upVotesBy: [], downVotesBy: ['u-1'] });
+  describe('voting - downvote', () => {
+    it('should dispatch downvote when user has not voted yet', async () => {
+      const user = userEvent.setup();
 
-    render(<CommentItem comment={comment as any} ownProfile={{ id: 'u-1' } as any} threadId='thread-1' />);
+      renderSubject({
+        commentOverrides: { upVotesBy: [], downVotesBy: [] },
+      });
 
-    await user.click(screen.getByRole('button', { name: 'down-vote' }));
+      await user.click(screen.getByRole('button', { name: 'down-vote' }));
 
-    expect(handleNeutralVoteCommentMock).toHaveBeenCalledWith({
-      threadId: 'thread-1',
-      commentId: 'comment-1',
-      userId: 'u-1',
-      showGlobalLoading: false,
-    });
-  });
+      expect(handleDownVoteCommentMock).toHaveBeenCalledWith({
+        threadId: defaultThreadId,
+        commentId: 'comment-1',
+        userId: 'u-1',
+        showGlobalLoading: false,
+      });
 
-  it('klik downvote: jika sebelumnya upvote -> dispatch handleDownVoteComment (switch)', async () => {
-    const user = userEvent.setup();
-    const comment = makeComment({ upVotesBy: ['u-1'], downVotesBy: [] });
-
-    render(<CommentItem comment={comment as any} ownProfile={{ id: 'u-1' } as any} threadId='thread-1' />);
-
-    await user.click(screen.getByRole('button', { name: 'down-vote' }));
-
-    expect(handleDownVoteCommentMock).toHaveBeenCalledWith({
-      threadId: 'thread-1',
-      commentId: 'comment-1',
-      userId: 'u-1',
-      showGlobalLoading: false,
+      expect(dispatchMock).toHaveBeenCalledWith({
+        type: 'comments/downVote',
+        payload: {
+          threadId: defaultThreadId,
+          commentId: 'comment-1',
+          userId: 'u-1',
+          showGlobalLoading: false,
+        },
+      });
     });
 
-    expect(handleNeutralVoteCommentMock).not.toHaveBeenCalled();
+    it('should dispatch neutral vote when user has already downvoted', async () => {
+      const user = userEvent.setup();
+
+      renderSubject({
+        commentOverrides: { upVotesBy: [], downVotesBy: ['u-1'] },
+      });
+
+      await user.click(screen.getByRole('button', { name: 'down-vote' }));
+
+      expect(handleNeutralVoteCommentMock).toHaveBeenCalledWith({
+        threadId: defaultThreadId,
+        commentId: 'comment-1',
+        userId: 'u-1',
+        showGlobalLoading: false,
+      });
+    });
+
+    it('should dispatch downvote when user previously upvoted (switch vote)', async () => {
+      const user = userEvent.setup();
+
+      renderSubject({
+        commentOverrides: { upVotesBy: ['u-1'], downVotesBy: [] },
+      });
+
+      await user.click(screen.getByRole('button', { name: 'down-vote' }));
+
+      expect(handleDownVoteCommentMock).toHaveBeenCalledWith({
+        threadId: defaultThreadId,
+        commentId: 'comment-1',
+        userId: 'u-1',
+        showGlobalLoading: false,
+      });
+
+      expect(handleNeutralVoteCommentMock).not.toHaveBeenCalled();
+    });
   });
 });
