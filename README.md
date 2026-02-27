@@ -1,73 +1,255 @@
-# React + TypeScript + Vite
+# Forum Discussion App
 
-This template provides a minimal setup to get React working in Vite with HMR and some ESLint rules.
+A modern web-based forum discussion application built with React, TypeScript, Redux Toolkit, and Vite.
+This project implements authentication, thread management, discussion features, testing, and UI component development using Storybook.
 
-Currently, two official plugins are available:
+---
 
-- [@vitejs/plugin-react](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react) uses [Babel](https://babeljs.io/) (or [oxc](https://oxc.rs) when used in [rolldown-vite](https://vite.dev/guide/rolldown)) for Fast Refresh
-- [@vitejs/plugin-react-swc](https://github.com/vitejs/vite-plugin-react/blob/main/packages/plugin-react-swc) uses [SWC](https://swc.rs/) for Fast Refresh
+## 🚀 Tech Stack
 
-## React Compiler
+### Core
 
-The React Compiler is currently not compatible with SWC. See [this issue](https://github.com/vitejs/vite-plugin-react/issues/428) for tracking the progress.
+- **React 19**
+- **TypeScript**
+- **Vite**
+- **Redux Toolkit**
+- **React Router v7**
+- **Axios**
 
-## Expanding the ESLint configuration
+### UI & Styling
 
-If you are developing a production application, we recommend updating the configuration to enable type-aware lint rules:
+- **TailwindCSS v4**
+- **Radix UI**
+- **ShadCN**
+- **Lucide React**
+- **Sonner (Toast Notification)**
 
-```js
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
+### Forms & Validation
 
-      // Remove tseslint.configs.recommended and replace with this
-      tseslint.configs.recommendedTypeChecked,
-      // Alternatively, use this for stricter rules
-      tseslint.configs.strictTypeChecked,
-      // Optionally, add this for stylistic rules
-      tseslint.configs.stylisticTypeChecked,
+- **React Hook Form**
+- **Zod**
 
-      // Other configs...
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
+### Testing
+
+- **Vitest**
+- **Testing Library**
+- **Cypress (E2E)**
+
+### Code Quality
+
+- **ESLint**
+- **Prettier**
+- **TypeScript Strict Mode**
+
+### Component Development
+
+- **Storybook**
+
+---
+
+## 📦 Installation
+
+Clone the repository:
+
+```bash
+git clone https://github.com/dianerdiana/forum-discussion-app.git
+cd forum-discussion-app
 ```
 
-You can also install [eslint-plugin-react-x](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-x) and [eslint-plugin-react-dom](https://github.com/Rel1cx/eslint-react/tree/main/packages/plugins/eslint-plugin-react-dom) for React-specific lint rules:
+Install dependencies:
 
-```js
-// eslint.config.js
-import reactDom from 'eslint-plugin-react-dom';
-import reactX from 'eslint-plugin-react-x';
-
-export default defineConfig([
-  globalIgnores(['dist']),
-  {
-    files: ['**/*.{ts,tsx}'],
-    extends: [
-      // Other configs...
-      // Enable lint rules for React
-      reactX.configs['recommended-typescript'],
-      // Enable lint rules for React DOM
-      reactDom.configs.recommended,
-    ],
-    languageOptions: {
-      parserOptions: {
-        project: ['./tsconfig.node.json', './tsconfig.app.json'],
-        tsconfigRootDir: import.meta.dirname,
-      },
-      // other options...
-    },
-  },
-]);
+```bash
+npm install
 ```
+
+---
+
+## 🧪 Available Scripts
+
+### Development
+
+```bash
+npm run dev
+```
+
+Starts Vite development server.
+
+---
+
+### Build Production
+
+```bash
+npm run build
+```
+
+Builds the app for production.
+
+---
+
+### Preview Production Build
+
+```bash
+npm run preview
+```
+
+---
+
+### Linting
+
+```bash
+npm run lint
+npm run lint:fix
+```
+
+---
+
+### Formatting
+
+```bash
+npm run format
+```
+
+---
+
+### Unit & Integration Testing
+
+```bash
+npm run test
+```
+
+Runs tests using Vitest.
+
+---
+
+### End-to-End Testing (Cypress)
+
+```bash
+npm run e2e
+```
+
+---
+
+### CI Test (Unit + E2E)
+
+```bash
+npm run ci:test
+```
+
+Runs unit tests, starts dev server, then executes Cypress tests.
+
+---
+
+### Storybook
+
+Run Storybook:
+
+```bash
+npm run storybook
+```
+
+Build Storybook:
+
+```bash
+npm run build-storybook
+```
+
+---
+
+## 🧠 Architecture Overview
+
+This project follows a modular feature-based structure:
+
+```
+src/
+ ├── app/
+ ├── components/
+ ├── features/
+ │    ├── auth/
+ │    ├── threads/
+ │    ├── users/
+ │    └── ...
+ ├── redux/
+ ├── routes/
+ └── utils/
+```
+
+### Architectural Principles
+
+- Feature-based modularization
+- Global state management via Redux Toolkit
+- Separation between UI components and business logic
+- Form validation using schema-based validation (Zod)
+- Test-driven component reliability
+- Storybook-driven UI development
+
+---
+
+## 🔐 Authentication Flow
+
+- Login & Register
+- Auth state managed globally
+- Protected routes
+- Token-based API communication using Axios
+
+---
+
+## 🧪 Testing Strategy
+
+| Layer            | Tool            |
+| ---------------- | --------------- |
+| Unit Test        | Vitest          |
+| Component Test   | Testing Library |
+| E2E Test         | Cypress         |
+| UI Isolated Test | Storybook       |
+
+Testing ensures:
+
+- Reducer correctness
+- Async thunk behavior
+- Component rendering
+- User interaction simulation
+- Full user flow validation
+
+---
+
+## 📁 Environment Variables
+
+If using external API:
+
+Create `.env` file:
+
+```
+VITE_BASE_URL=your_api_url_here
+```
+
+---
+
+## 📌 Key Features
+
+- User Authentication
+- Thread Creation
+- Thread Detail View
+- Commenting System
+- Redux Async Thunk Integration
+- Loading & Error Handling
+- Toast Notifications
+- Dark/Light Theme Support
+- Fully Tested Codebase
+- Component Documentation via Storybook
+
+---
+
+## 🛠 Development Notes
+
+- Strict ESLint configuration using `eslint-config-dicodingacademy`
+- Import sorting via Prettier plugin
+- Uses `start-server-and-test` for CI workflow
+- Built with scalable and maintainable folder structure
+
+---
+
+## 📜 License
+
+This project is for learning and portfolio purposes.
+
+---
